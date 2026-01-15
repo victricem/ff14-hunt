@@ -692,7 +692,6 @@
                   <div className="flex gap-4 font-black">
                     <button onClick={() => { if(isAdmin){ setIsAdmin(false); localStorage.setItem('ff-is-admin', 'false'); } else { setShowAdminModal(true); } }} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase transition-all shadow-sm font-black ${isAdmin ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : styles.btn}`}>{isAdmin ? '領隊模式 ON' : '領隊授權'}</button>
                     <button onClick={() => setShowWeatherModal(true)} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase font-black font-black ${styles.btn}`}>天氣預報系統</button>
-                    {/* 移除全域歷史按鈕，改為各怪獨立 */}
                     <button onClick={() => { const nt = isMidnight?'sunlight':'midnight'; setTheme(nt); localStorage.setItem('ff-theme', nt); }} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase font-black ${styles.btn}`}>{isMidnight ? '切換日光' : '切換深夜'}</button>
                   </div>
                 </div>
@@ -795,7 +794,18 @@
                                     <div className="flex flex-col min-w-[180px] font-black font-black font-black"><span className="text-[10px] text-slate-500 uppercase tracking-tighter">{m.zone}</span><div className="flex items-baseline gap-2"><span className="text-xl font-black font-black font-black">{m.cn}</span><span className="text-xs opacity-50 font-normal">{m.jp}</span></div></div>
                                     <div className={`text-xs ${statusObj.color} hidden sm:block`}>{statusObj.label}</div>
                                     {isSpecial && <Crown className="w-5 h-5 text-amber-500 fill-current ml-4 font-black"/>}
-                                    {!isKilled && winText && <div className="text-[10px] text-blue-400 animate-pulse truncate ml-4 hidden lg:block font-black font-black font-black">{winText}</div>}
+                                    {!isKilled && winText && (
+                                      <div className={`
+                                        ml-4 px-3 py-0.5 rounded-full text-[11px] font-black border tracking-wide transition-all duration-300 hidden lg:flex items-center whitespace-nowrap
+                                        ${winText === "窗口符合條件"
+                                          ? "bg-green-600 text-white border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-pulse scale-105" 
+                                          : "bg-blue-500/10 text-blue-400 border-blue-500/20" 
+                                        }
+                                      `}>
+                                        {winText === "窗口符合條件" && <span className="mr-1">⚡</span>}
+                                        {winText}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="flex gap-3 font-black font-black">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-3.5 border-2 rounded-xl font-black font-black font-black ${styles.btn}`}><Edit3 className="w-6 h-6"/></button>}
@@ -847,7 +857,6 @@
                                   </div>
                                   <div className="flex gap-4">
                                     {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`p-5 rounded-2xl border-2 transition-all font-black ${styles.btn}`}><Edit3 className="w-7 h-7"/></button>}
-                                    {/* A怪的歷史紀錄按鈕 */}
                                     <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-5 rounded-2xl border-2 transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-7 h-7" /></button>
                                     <button onClick={() => toggleTrainMob(m)} className={`p-5 rounded-2xl border-2 font-black font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-7 h-7" /> : <ListPlus className="w-7 h-7" />}</button>
                                     <button onClick={() => requestToggleKill(m.id, m.cn, 4)} className={`p-5 rounded-2xl border-2 transition-all active:scale-95 font-black font-black font-black font-black ${isKilled?(isMidnight ? 'bg-blue-950/40 border-blue-500/50 text-blue-400 font-black' : 'bg-red-600 text-white font-black'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400 font-black font-black':'bg-blue-600 text-white font-black font-black')}`}>{isKilled?<RotateCcw className="w-7 h-7"/>:<CheckCircle className="w-7 h-7"/>}</button>
@@ -863,7 +872,6 @@
                                   </div>
                                   <div className="flex gap-3 font-black font-black">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id)}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn}`}><Edit3 className="w-5 h-5"/></button>}
-                                     {/* A怪的歷史紀錄按鈕 (List模式) */}
                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn}`}><FileClock className="w-5 h-5" /></button>
                                      <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5" /> : <ListPlus className="w-5 h-5" />}</button>
                                      <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, 4)}} className={`p-2.5 rounded-xl text-white ${isKilled?'bg-red-600 font-black':'bg-blue-600 font-black font-black'}`}>{isKilled?<RotateCcw className="w-4 h-4"/>:<CheckCircle className="w-4 h-4"/>}</button>
@@ -882,7 +890,6 @@
                 </div>
               )}
 
-              {/* Admin Modal */}
               {showAdminModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl font-black font-black font-black">
                   <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-16 rounded-[5rem] shadow-2xl max-sm w-full text-center font-black font-black`}>
@@ -892,7 +899,6 @@
                 </div>
               )}
 
-              {/* Confirm Modal */}
               {confirmModal.isOpen && (
                 <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 font-black font-black font-black">
                     <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-12 rounded-[4rem] shadow-2xl max-w-sm w-full text-center font-black font-black font-black`}>
@@ -909,7 +915,6 @@
                 </div>
               )}
 
-              {/* Weather Modal */}
               {showWeatherModal && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 font-black font-black font-black">
                     <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-10 rounded-[5rem] max-w-4xl w-full text-left font-black shadow-2xl font-black font-black font-black`}>
@@ -942,7 +947,6 @@
                 </div>
               )}
 
-              {/* History Log Modal (Single Target) */}
               <HistoryLogModal 
                 isOpen={historyTarget.isOpen} 
                 onClose={() => setHistoryTarget({...historyTarget, isOpen: false})} 
@@ -953,7 +957,6 @@
                 styles={styles} 
               />
 
-              {/* Train List Overlay */}
               {trainList.length > 0 && (
                 <div className={`fixed bottom-0 left-0 right-0 z-50 p-12 ${isMidnight ? 'bg-[#0f111a]/98 border-white/10 font-black font-black font-black font-black' : 'bg-white/98 border-slate-200'} backdrop-blur-3xl border-t-2 shadow-[0_-50px_120px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom-20 duration-500 rounded-t-[6rem]`}>
                   <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-10 mb-10 px-8 font-black font-black">
@@ -985,6 +988,7 @@
     </script>
 </body>
 </html>
+
 
 
 
