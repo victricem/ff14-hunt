@@ -198,7 +198,7 @@
 				 return { label: '⚡ 特殊觸發就緒', color: 'text-purple-500 font-black animate-pulse shadow-purple-500/50' };
 			}
 		
-			if (hoursSinceOpen < 24) return { label: '🟢 窗口開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
+			if (hoursSinceOpen < 24) return { label: '🟢 觸發開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
 			if (hoursSinceOpen < 48) return { label: '🟠 高機率觸發', color: 'text-amber-500 font-black animate-pulse' };
 			return { label: '🔴 強制觸發 (必出)', color: 'text-red-500 font-black animate-bounce' };
 		  };
@@ -1147,6 +1147,7 @@
     </script>
 </body>
 </html>
+
 
 
 
