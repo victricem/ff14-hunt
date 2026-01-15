@@ -191,7 +191,7 @@
 			if (rank.toLowerCase() === 'a') {
 				if (hoursSinceOpen < 1) return { label: '🟢 重生開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
 				if (hoursSinceOpen < 5) return { label: '🟠 高機率重生', color: 'text-amber-500 font-black animate-pulse' };
-				return { label: '🔴 已重生', color: 'text-red-500 font-black animate-bounce' };
+				return { label: '🔴 已重生 (逾時)', color: 'text-red-500 font-black animate-bounce' };
 			}
 		
 			if (rank.toLowerCase() === 'ss') {
@@ -1147,6 +1147,7 @@
     </script>
 </body>
 </html>
+
 
 
 
