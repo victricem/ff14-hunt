@@ -179,27 +179,37 @@
 		const getCombinedWindowText = (m, eorzeaData) => {
           if (!m.windowType) return null;
           const currentUnix = Date.now() / 1000;
-          const ET_HOUR_SEC = 175; 
+          const ET_HOUR_SEC = 175; // 1 ET小時 = 175秒
+
+          // 鎖定天氣時段的起始時間
           const weatherBaseTime = Math.floor(currentUnix / 1400) * 1400;
+
           for (let i = 0; i < 450; i++) {
             const checkTime = weatherBaseTime + (i * 1400); 
+            
             const checkETTotal = checkTime * (1440/70); 
             const checkETHours = (checkETTotal / 3600) % 24; 
             const checkETDay = (Math.floor(checkETTotal / 86400) % 32) + 1;
+            
             const weatherVal = calculateWeatherValue(Math.floor(checkTime));
             const weatherName = getWeather(m.zone, weatherVal);
             const isW = m.weather ? (m.weather.includes(weatherName)) : true;
+            
             const moonPhase = (Math.floor(checkETTotal / 86400) + 1) % 32;
             const moonDay = moonPhase === 0 ? 32 : moonPhase; 
             const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
+
             if (isW && isMoon) {
                 for (let h = 0; h < 8; h++) {
                     const currentETHour = (checkETHours + h) % 24;
                     const exactSpawnTime = checkTime + (h * ET_HOUR_SEC);
                     const exactSpawnEndTime = exactSpawnTime + ET_HOUR_SEC;
+
+                    // 巨大鰩特殊規則
                     if (m.cn === '巨大鰩' && moonDay === 16 && currentETHour < 12) {
-                        continue;
+                        continue; 
                     }
+
                     let isTimeValid = true;
                     if (m.time) {
                         const [start, end] = m.time;
@@ -209,10 +219,46 @@
                             isTimeValid = (currentETHour >= start || currentETHour < end);
                         }
                     }
+
                     if (isTimeValid) {
+                        // ★★★ 修改重點：如果現在正在窗口期，計算剩餘時間 ★★★
                         if (currentUnix >= exactSpawnTime && currentUnix < exactSpawnEndTime) {
-                             return "窗口符合條件";
+                             // 1. 計算天氣結束時間 (本時段 8ET小時 結束)
+                             const weatherEndsAt = checkTime + 1400;
+                             
+                             // 2. 計算時間結束時間 (如果有限制)
+                             let timeEndsAt = Number.MAX_SAFE_INTEGER;
+                             if (m.time) {
+                                 const [start, end] = m.time;
+                                 let hoursLeft = 0;
+                                 if (start < end) {
+                                     hoursLeft = end - currentETHour;
+                                 } else {
+                                     // 跨日情況 (例如 17-8)
+                                     if (currentETHour >= start) hoursLeft = (24 - currentETHour) + end;
+                                     else hoursLeft = end - currentETHour;
+                                 }
+                                 // 計算目標結束的 Unix 時間
+                                 timeEndsAt = exactSpawnTime + (hoursLeft * ET_HOUR_SEC);
+                             }
+
+                             // 取兩者較早結束的時間
+                             const finalEndsAt = Math.min(weatherEndsAt, timeEndsAt);
+                             const secondsLeft = finalEndsAt - currentUnix;
+                             
+                             if (secondsLeft <= 0) return "窗口即將結束";
+
+                             const rh = Math.floor(secondsLeft / 3600);
+                             const rm = Math.floor((secondsLeft % 3600) / 60);
+                             const rs = Math.floor(secondsLeft % 60);
+                             const rmm = rm.toString().padStart(2, '0');
+                             const rss = rs.toString().padStart(2, '0');
+                             
+                             // 回傳新的文字格式
+                             return `開放剩餘：${rh}h ${rmm}m ${rss}s`;
                         }
+
+                        // 未來時間倒數 (保持不變)
                         if (exactSpawnTime > currentUnix) {
                              const waitSeconds = exactSpawnTime - currentUnix;
                              const days = Math.floor(waitSeconds / 86400);
@@ -221,9 +267,8 @@
                              const s = Math.floor(waitSeconds % 60);
                              const mm = min.toString().padStart(2, '0');
                              const ss = s.toString().padStart(2, '0');
-                             if (days > 0) {
-                                 return `理論：約 ${days}天 ${h}h ${mm}m`;
-                             }
+
+                             if (days > 0) return `理論：約 ${days}天 ${h}h ${mm}m`;
                              return `理論：約 ${h}h ${mm}m ${ss}s`;
                         }
                     }
@@ -757,28 +802,31 @@
                                 <div className="flex justify-between items-start mb-8 font-black font-black font-black font-black">
                                   <div className="flex-1 font-black">
                                     <div className="flex items-center gap-3 mb-6 font-black font-black">
-                                       <span className={`${m.expKey==='arr'?'bg-emerald-600':'bg-yellow-600'} text-white text-[10px] px-4 py-1.5 rounded-lg font-black font-black`}>{m.expName}</span>
-                                       {isSpecial && <span className="bg-amber-500 text-black text-[10px] px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xl font-black uppercase font-black"><Crown className="w-4 h-4 fill-current"/> 特殊首領</span>}
+                                      <span className={`${m.expKey==='arr'?'bg-emerald-600':'bg-yellow-600'} text-white text-[10px] px-4 py-1.5 rounded-lg font-black font-black`}>{m.expName}</span>
+                                      {isSpecial && <span className="bg-amber-500 text-black text-[10px] px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xl font-black uppercase font-black"><Crown className="w-4 h-4 fill-current"/> 特殊首領</span>}
                                     </div>
                                     <h3 className="text-4xl mb-3 font-black tracking-tight">{m.cn}</h3>
                                     <p className="text-sm opacity-40 mb-2 italic font-black font-black font-black">{m.jp}</p>
                                     <div className="text-xs text-slate-500 mb-6 font-black font-black font-black">{m.zone}</div>
                                     <div className="text-[12px] text-slate-500 mb-6 flex items-center gap-2 font-bold font-black font-black font-black"><Clock className="w-4 h-4" /> 上次擊殺：{formatDateTime(timer?.startTime)}</div>
+                                    
+                                    {/* ★★★ 卡片模式：支援「開放剩餘」倒數 ★★★ */}
                                     {!isKilled && winText && (
                                       <div className={`
                                         inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black border tracking-wide transition-all duration-300 mb-6
-                                        ${winText === "窗口符合條件"
+                                        ${(winText.includes("開放剩餘") || winText === "窗口符合條件")
                                           ? "bg-green-600 text-white border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse scale-105" 
                                           : "bg-blue-500/10 text-blue-400 border-blue-500/20" 
                                         }
                                       `}>
-                                        {winText === "窗口符合條件" 
+                                        {(winText.includes("開放剩餘") || winText === "窗口符合條件")
                                           ? <span className="mr-1 text-sm">⚡</span> 
                                           : <Zap className="w-3 h-3 fill-current" />
                                         }
                                         {winText}
                                       </div>
                                     )}
+
                                   </div>
                                   <div className="flex flex-col gap-5 font-black">
                                     {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`p-6 rounded-[2rem] border-2 transition-all hover:scale-110 font-black font-black ${styles.btn}`}><Edit3 className="w-8 h-8"/></button>}
@@ -794,18 +842,21 @@
                                     <div className="flex flex-col min-w-[180px] font-black font-black font-black"><span className="text-[10px] text-slate-500 uppercase tracking-tighter">{m.zone}</span><div className="flex items-baseline gap-2"><span className="text-xl font-black font-black font-black">{m.cn}</span><span className="text-xs opacity-50 font-normal">{m.jp}</span></div></div>
                                     <div className={`text-xs ${statusObj.color} hidden sm:block`}>{statusObj.label}</div>
                                     {isSpecial && <Crown className="w-5 h-5 text-amber-500 fill-current ml-4 font-black"/>}
+                                    
+                                    {/* ★★★ 列表模式：支援「開放剩餘」倒數 ★★★ */}
                                     {!isKilled && winText && (
                                       <div className={`
                                         ml-4 px-3 py-0.5 rounded-full text-[11px] font-black border tracking-wide transition-all duration-300 hidden lg:flex items-center whitespace-nowrap
-                                        ${winText === "窗口符合條件"
+                                        ${(winText.includes("開放剩餘") || winText === "窗口符合條件")
                                           ? "bg-green-600 text-white border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-pulse scale-105" 
                                           : "bg-blue-500/10 text-blue-400 border-blue-500/20" 
                                         }
                                       `}>
-                                        {winText === "窗口符合條件" && <span className="mr-1">⚡</span>}
+                                        {(winText.includes("開放剩餘") || winText === "窗口符合條件") && <span className="mr-1">⚡</span>}
                                         {winText}
                                       </div>
                                     )}
+
                                   </div>
                                   <div className="flex gap-3 font-black font-black">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-3.5 border-2 rounded-xl font-black font-black font-black ${styles.btn}`}><Edit3 className="w-6 h-6"/></button>}
@@ -988,6 +1039,7 @@
     </script>
 </body>
 </html>
+
 
 
 
