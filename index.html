@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFXIV 繁中狩獵小幫手</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"
+      }
+    }
+    </script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #0f172a; }
+        /* 隱藏滾動條但保留功能 */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import ReactDOM from 'react-dom/client';
+        import { 
+          Timer, Clock, Shield, Sword, CheckCircle, RotateCcw, Loader2, 
+          ListPlus, Trash2, Share2, Lock, Unlock, Target, MapPin, Calendar, 
+          Edit3, Sun, Moon, LayoutGrid, Heart, Zap, Megaphone, AlertCircle, 
+          X, CloudSun, Crown, List, Check 
+        } from 'lucide-react';
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+        import { getFirestore, doc, setDoc, onSnapshot, collection } from 'firebase/firestore';
+
+        const firebaseConfig = {
+		  apiKey: "AIzaSyAfHofjsLtR0L9xrbv4rbKRTDYfieQBOUc",
+		  authDomain: "ff14-hunt.firebaseapp.com",
+		  projectId: "ff14-hunt",
+		  storageBucket: "ff14-hunt.firebasestorage.app",
+		  messagingSenderId: "685554694198",
+		  appId: "1:685554694198:web:6878dc79d6a5876e0d4097",
+		  measurementId: "G-55QRR4WL2E"
+		};
+
+        // 初始化 Firebase
+        const fbApp = initializeApp(firebaseConfig);
+        const auth = getAuth(fbApp);
+        const db = getFirestore(fbApp);
+        
+        // 固定的 App ID (用來區分資料庫中的資料夾)
+        const appIdGlobal = 'ffxiv-hunt-stable-final-v24';
+
+        // ==========================================
+        // 以下是您的狩獵工具核心邏輯 (已整合)
+        // ==========================================
+
+        const rankMap = { s: 'S', a: 'A', ss: 'SS' };
+        const EORZEA_RATIO = 1440 / 70; 
+        const ET_HOUR_IN_LT = 175 * 1000;            
+        const ET_MINUTE_IN_LT = ET_HOUR_IN_LT / 60;   
+        const ET_DAY_IN_LT = ET_HOUR_IN_LT * 24;      
+        const ADMIN_KEY_HASH = "630b91e9f19586a111b0e5f29910d55e884102c77d61247d4838637088b2098b";
+
+        const SERVERS = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦'];
+
+        const EXPANSIONS = [
+          { id: 'all', name: '全部版本', sub: 'ALL', color: 'bg-slate-500' },
+          { id: 'dt', name: '黃金的遺產', sub: '7.0', color: 'bg-yellow-600' },
+          { id: 'ew', name: '曉月之終途', sub: '6.0', color: 'bg-indigo-600' },
+          { id: 'shb', name: '漆黑的反叛者', sub: '5.0', color: 'bg-purple-700' },
+          { id: 'sb', name: '紅蓮之狂潮', sub: '4.0', color: 'bg-red-600' },
+          { id: 'hw', name: '蒼天的伊修加德', sub: '3.0', color: 'bg-blue-600' },
+          { id: 'arr', name: '新生艾奧傑亞', sub: '2.0', color: 'bg-emerald-600' },
+        ];
+
+        // --- 天氣系統核心演算法 ---
+        const calculateWeatherValue = (unixSeconds) => {
+          const timeBlock = Math.floor(unixSeconds / 1400);
+          const startHour = ((timeBlock + 1) % 3) * 8;
+          const totalDays = Math.floor(timeBlock / 3);
+          const calcBase = totalDays * 100 + startHour;
+          const step1 = ((calcBase << 11) ^ calcBase) >>> 0;
+          const step2 = ((step1 >>> 8) ^ step1) >>> 0;
+          return step2 % 100;
+        };
+
+        const getWeather = (zoneName, value) => {
+          switch (zoneName) {
+            case '奧闊帕恰山':
+              if (value < 20) return '碧空'; 
+              if (value < 40) return '晴朗'; 
+              if (value < 55) return '風';
+              if (value < 70) return '霧';
+              if (value < 85) return '雨';
+              return '雪';
+            case '迷津':
+              if (value < 15) return '碧空'; 
+              if (value < 60) return '晴朗'; 
+              if (value < 75) return '陰雲';
+              if (value < 85) return '雨';
+              if (value < 95) return '暴雨';
+              return '靈烈';
+            case '黑衣森林中央林區':
+            case '中森': 
+              if (value < 5)  return '雷';
+              if (value < 20) return '雨';
+              if (value < 30) return '霧';
+              if (value < 40) return '陰雲';
+              if (value < 70) return '晴朗'; 
+              return '碧空'; 
+            case '東拉諾西亞':
+            case '東拉': 
+              if (value < 5)  return '霧';
+              if (value < 50) return '碧空'; 
+              if (value < 80) return '晴朗'; 
+              if (value < 90) return '陰雲';
+              if (value < 95) return '雨';
+              return '暴雨';
+            default:
+              return '未知';
+          }
+        };
+
+        const MAP_WEATHER_LOGIC = {
+          '奧闊帕恰山': (v) => getWeather('奧闊帕恰山', v),
+          '迷津': (v) => getWeather('迷津', v),
+          '黑衣森林中央林區': (v) => getWeather('黑衣森林中央林區', v),
+          '東拉諾西亞': (v) => getWeather('東拉諾西亞', v),
+        };
+
+        // --- 輔助函式 ---
+        const formatDateTime = (ts) => {
+          if (!ts) return "無紀錄";
+          const d = new Date(ts);
+          return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+        };
+
+        const formatStatusObj = (endTime, currentTime, isMidnight) => {
+          if (!endTime || endTime <= currentTime) {
+            const past = endTime ? Math.abs(endTime - currentTime) : 0;
+            const h = Math.floor(past / 3600000);
+            return { label: endTime ? `已開 ${h}h` : "窗口開放", color: isMidnight ? "text-emerald-400 font-bold" : "text-emerald-600 font-bold", isReady: true };
+          }
+          const diff = endTime - currentTime;
+          const h = Math.floor(diff / 3600000);
+          const m = Math.floor((diff % 3600000) / 60000);
+          return { label: `冷卻中 ${h}h ${m}m`, color: isMidnight ? "text-blue-400" : "text-blue-500", isReady: false };
+        };
+
+        const getCombinedWindowText = (m, eorzeaData) => {
+          if (!m.windowType) return null;
+          const currentUnix = Date.now() / 1000;
+          for (let i = 0; i < 72; i++) {
+            const checkTime = currentUnix + (i * 1400); 
+            const checkETTotal = checkTime * (1440/70); 
+            const checkETHours = (checkETTotal / 3600) % 24;
+            const moonPhase = (Math.floor(checkETTotal / 86400) + 1) % 32;
+            const moonDay = moonPhase === 0 ? 32 : moonPhase; 
+            const weatherVal = calculateWeatherValue(Math.floor(checkTime));
+            const weatherName = getWeather(m.zone, weatherVal);
+
+            const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
+            const isTime = m.time ? (checkETHours >= m.time[0] && checkETHours < m.time[1]) : true; 
+            const isW = m.weather ? (m.weather.includes(weatherName)) : true;
+            
+            if (isMoon && isW) {
+                const waitSeconds = checkTime - currentUnix;
+                if (waitSeconds <= 0) {
+                     if (i === 0) return "窗口符合條件";
+                }
+                const h = Math.floor(waitSeconds / 3600);
+                const min = Math.floor((waitSeconds % 3600) / 60);
+                return `理論：約 ${h}h ${min}m`;
+            }
+          }
+          return null;
+        };
+
+        async function sha256(message) {
+          try {
+            const msgUint8 = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+          } catch (e) { return message; }
+        }
+
+        // --- 怪物數據庫 ---
+        const HUNT_DATA = {
+          dt: {
+            s: [
+              { cn: '水晶化身之王', jp: 'ロード・オブ・クリスタライザー', zone: '黃金全境', window: 84, trigger: '特殊S級觸發：擊殺區域內 A 級狩獵怪「水晶化身」後機率觸發。' },
+              { cn: '厭忌之人 奇里格', jp: '厭忌のキーリーゲー', zone: '奧闊帕恰山', window: 84, trigger: 'ET 新月 (1-4日) 00:00-08:00 + 天氣「霧」時，經過刷新點。', windowType: 'full-combined', moon: [1,4], time: [0,8], weather: '霧' },
+              { cn: '伊努索奇', jp: 'イヌショキー', zone: '克扎瑪烏卡濕地', window: 84, trigger: '帶著寵物「藍閃蝶」經過。' },
+              { cn: '內尤佐緹', jp: 'ネヨーゾテール', zone: '亞克特爾樹海', window: 84, trigger: '從背包一次性捨棄堆疊 50 個或以上的「魚粉」。' },
+              { cn: '山謝亞', jp: 'サンシェヤ', zone: '夏勞尼荒野', window: 84, trigger: '連續完成三次 FATE「惡魔的火種——飲火魔」，期間該 FATE 不能失敗。' },
+              { cn: '先驅勇士 阿提卡斯', jp: '先駆けのアティカス', zone: '遺產之地', window: 84, trigger: '使用烹調師製作高品質 (HQ) 的「犎牛牛排」(99級配方)。' },
+              { cn: '天氣預報機器人', jp: 'ウェザーリポーター', zone: '活著的記憶', window: 84, trigger: '在刷新點附近使用青魔法師技能「狂風暴雪」。' },
+            ],
+            a: [
+              { cn: '水晶化身', jp: 'クリスタライザー', zone: '黃金全境', window: 4 },
+              { cn: '女王鷹蜂', jp: 'クイーンホーク', zone: '奧闊帕恰山', window: 4 }, { cn: '內丘奇霍', jp: 'ネチュキホ', zone: '奧闊帕恰山', window: 4 },
+              { cn: '普庫恰', jp: 'プ庫恰', zone: '克扎瑪烏卡濕地', window: 4 }, { cn: '驚雨蟾蜍', jp: 'レイントリラー', zone: '克扎瑪烏卡濕地', window: 4 },
+              { cn: '血鳴鼠', jp: 'ラシュイチャ', zone: '亞克特爾樹海', window: 4 }, { cn: '幻煌鳥', jp: '幻煌鳥', zone: '亞克特爾樹海', window: 4 },
+              { cn: '凱海尼海亞麥尤伊', jp: 'ケヘニヘヤメウィ', zone: '夏勞尼荒野', window: 4 }, { cn: '艾海海陶瓦泡', jp: 'エヘヘトー瓦ポ', zone: '夏勞尼荒野', window: 4 },
+              { cn: '多變裝置', jp: 'ヴァリアポッド', zone: '遺產之地', window: 4 }, { cn: '海休瓦拉', jp: 'ヘシュ瓦拉', zone: '遺產之地', window: 4 },
+              { cn: '貓眼', jp: 'キャッツアイ', zone: '活著的記憶', window: 4 }, { cn: '清掃者薩莉', jp: 'サリー・ザ・スイーパー', zone: '活著的記憶', window: 4 },
+            ]
+          },
+          ew: {
+            s: [
+              { cn: '克爾', jp: 'ケール', zone: '曉月全境', window: 84, trigger: '特殊S級觸發：擊殺區域內隨機出現的「克爾的侍從」後觸發。' },
+              { cn: '布弗魯', jp: 'ブーフールー', zone: '迷津', window: 84, trigger: 'ET 09:00-17:00 + 天氣「碧空/晴朗」時，攜帶寵物「小巨魔」經過刷新點。', windowType: 'full-combined', time: [9,17], weather: '碧空/晴朗' },
+              { cn: '頗胝迦', jp: 'スパティカ', zone: '薩維奈島', window: 84, trigger: '擊殺 100 隻阿輸陀花 + 100 隻畢舍遮 + 100 隻金剛尾。' },
+              { cn: '阿姆斯特朗', jp: 'アームストロング', zone: '加雷馬', window: 84, trigger: '裝備「修好的帝國盔帽」與「修好的帝國短袍」，在刷新點陷入無法戰鬥狀態。' },
+              { cn: '沉思之物', jp: 'ルミネイター', zone: '嘆息海', window: 84, trigger: '擊殺 100 隻思考之物 + 100 隻彷徨之物 + 100 隻嘆息之物。' },
+              { cn: '俄菲翁尼厄斯', jp: 'オピオネウス', zone: '厄爾庇斯', window: 84, trigger: '一次性捨棄堆疊 5 顆的「厄爾庇斯之鳥蛋」。' },
+              { cn: '狹縫', jp: 'ナロー＝リフト', zone: '天外天垓', window: 84, trigger: '10人或以上一起攜帶寵物「小異亞」經過刷新點。' },
+            ],
+            a: [
+              { cn: '克爾的侍從', jp: 'ケールの従者', zone: '曉月全境', window: 4 },
+              { cn: '斯圖希', jp: 'ストーシー', zone: '迷津', window: 4 }, { cn: '胡睹', jp: 'フルドラ', zone: '迷津', window: 4 },
+              { cn: '尤蘭', jp: 'ユラン', zone: '薩維奈島', window: 4 }, { cn: '須羯里婆', jp: 'スグリーヴァ', zone: '薩維奈島', window: 4 },
+              { cn: '密涅瓦', jp: 'ミネルウァ', zone: '加雷馬', window: 4 }, { cn: '黑楊樹精', jp: 'アイゲイロス', zone: '加雷馬', window: 4 },
+              { cn: '月面仙人刺女王', jp: 'ルナテンダー・クイーン', zone: '嘆息海', window: 4 }, { cn: '慕斯公主', jp: 'ムースプリンセス', zone: '嘆息海', window: 4 },
+              { cn: '固蘭蓋奇', jp: 'グランガチ', zone: '厄爾庇斯', window: 4 }, { cn: '瓣齒鯊', jp: 'ペタロドゥス', zone: '厄爾庇斯', window: 4 },
+              { cn: '凡·艾爾', jp: 'ファン・アイル', zone: '天外天垓', window: 4 }, { cn: '伊塔總領', jp: 'アーチイータ', zone: '天外天垓', window: 4 },
+            ]
+          },
+          shb: {
+            s: [
+              { cn: '得到寬恕的叛亂', jp: 'フォーギヴン・リベリオン', zone: '漆黑全境', window: 84, trigger: '特殊SS級觸發：區域 S 級擊殺後，若觸發「流言」事件，擊殺 4 隻流言怪後觸發。' },
+              { cn: '戾蟲', jp: 'ティガー', zone: '雷克蘭德', window: 84, trigger: '從背包捨棄道具「秧雞胸脯肉」。' },
+              { cn: '得到寬恕的炫學', jp: 'フォーギヴン・ペダントリー', zone: '珂露西亞島', window: 84, trigger: '所有玩家總共採集「矮人棉」50 次。' },
+              { cn: '多智獸', jp: 'タルキ亞', zone: '安穆·艾蘭', window: 84, trigger: '青魔法師在刷新點使用技能「自爆」。' },
+              { cn: '阿格拉俄珀', jp: 'アグラオペ', zone: '伊爾美格', window: 84, trigger: '召喚寵物「朱孔雀」經過刷新點。' },
+              { cn: '伊休妲', jp: 'イシュタム', zone: '拉凱提卡大森林', window: 84, trigger: '擊殺 100 個破裂的隆卡人偶 + 100 個破裂的隆卡石蒺藜 + 100 個破裂的隆卡器皿。' },
+              { cn: '顧尼圖', jp: 'グニット', zone: '黑風海', window: 84, trigger: '位於黑風海 (X: 26, Y: 7)附近的冰海天使，吞噬 3 隻深海水蛭後巨大化並使用技能「口錐」。' },
+            ],
+            a: [
+              { cn: '得到寬恕的流言', jp: 'フォーギヴン・ゴシップ', zone: '漆黑全境', window: 4 },
+              { cn: '納克拉維', jp: 'ナックラヴィー', zone: '雷克蘭德', window: 4 }, { cn: '納里蓬', jp: '納リー蓬', zone: '雷克蘭德', window: 4 },
+              { cn: '小小殺手', jp: 'リルマーダー', zone: '珂露西亞島', window: 4 }, { cn: '烏拉坎', jp: 'フラカン', zone: '珂露西亞島', window: 4 },
+              { cn: '馬利克巨人掌', jp: 'マリクテンダー', zone: '安穆·艾蘭', window: 4 }, { cn: '休格爾', jp: '休格爾', zone: '安穆·艾蘭', window: 4 },
+              { cn: '保爾迪雅', jp: '保爾迪雅', zone: '伊爾美格', window: 4 }, { cn: '泥人', jp: '泥人', zone: '伊爾美格', window: 4 },
+              { cn: '格拉斯曼', jp: 'グラス曼', zone: '拉凱提卡大森林', window: 4 }, { cn: '蘇帕伊', jp: 'スペイ', zone: '拉凱提卡大森林', window: 4 },
+              { cn: '盧莎卡', jp: 'ルサルカ', zone: '黑風海', window: 4 }, { cn: '巴力', jp: '巴ール', zone: '黑風海', window: 4 },
+            ]
+          },
+          sb: {
+            s: [
+              { cn: '優曇婆羅花', jp: 'ウドンゲ', zone: '基拉巴尼亞邊區', window: 84, trigger: '擊殺 100 隻萊西 + 100 隻狄亞卡 (含 FATE 同名怪)。' },
+              { cn: '爬骨怪龍', jp: 'ボーンクローラー', zone: '基拉巴尼亞山區', window: 84, trigger: '乘坐運輸陸行鳥穿過地圖中線時機率觸發。' },
+              { cn: '鹽和光', jp: 'ソルト・アンド・ライト', zone: '基拉巴尼亞湖區', window: 84, trigger: '所有玩家總共從背包捨棄道具 50 次。' },
+              { cn: '巨大鰩', jp: 'オキナ', zone: '紅玉海', window: 84, trigger: '擊殺 100 隻無殼觀夢螺 + 100 隻觀夢螺，且在滿月 (16-20日) 時觸發，首日為 12:00 開始。', windowType: 'moon', moon: [16,20] },
+              { cn: '歐爾嘉娜', jp: 'オルガナ', zone: '太陽神草原', window: 84, trigger: '完成 FATE「石人英雄——格爾該朝魯」後經過刷新點。' },
+              { cn: '伽馬', jp: 'ガンマ', zone: '延夏', window: 84, trigger: 'ET 17:00-08:00 帶著寵物「迷你亞歷山大」經過刷新點。', windowType: 'time', time: [17,8] },
+            ],
+            a: [
+              { cn: '奧迦斯', jp: 'オルクス', zone: '基拉巴尼亞邊區', window: 4 }, { cn: '女王蜂', jp: 'アール', zone: '基拉巴尼亞邊區', window: 4 },
+              { cn: '弗克施泰因', jp: 'バックスタイン', zone: '基拉巴尼亞山區', window: 4 }, { cn: '熔谷炎蠍', jp: 'アクラブアメル', zone: '基拉巴尼亞山區', window: 4 },
+              { cn: '馬希沙', jp: 'マヒシャ', zone: '基拉巴尼亞湖區', window: 4 }, { cn: '泛光晶體', jp: 'ルミナーレ', zone: '基拉巴尼亞湖區', window: 4 },
+              { cn: '鬼觀夢', jp: 'オニユメミ', zone: '紅玉海', window: 4 }, { cn: '船幽靈', jp: '船幽靈', zone: '紅玉海', window: 4 },
+              { cn: '基里麥卡拉', jp: 'ギリメカラ', zone: '太陽神草原', window: 4 }, { cn: '碩姆', jp: 'ソム', zone: '太陽神草原', window: 4 },
+              { cn: '象魔修羅', jp: 'ガジャースラ', zone: '延夏', window: 4 }, { cn: '安迦達', jp: 'アンガダ', zone: '延夏', window: 4 }
+            ]
+          },
+          hw: {
+            s: [
+              { cn: '盧克洛塔', jp: 'レウクロッタ', zone: '魔大陸阿濟茲拉', window: 84, trigger: '擊殺50隻亞拉戈奇美拉 + 50隻小海德拉 + 50隻美拉西迪亞薇薇爾飛龍。' },
+              { cn: '凱撒貝希摩斯', jp: 'カイザーベヒーモス', zone: '庫爾札斯西部高地', window: 84, trigger: '帶著寵物皇家貝希摩斯寶寶經過刷新點。' },
+              { cn: '神穆爾鳥', jp: 'セーンムルウ', zone: '龍堡參天高地', window: 84, trigger: '在連續完成五次「龍卵引起的戰爭」。' },
+              { cn: '蒼白騎士', jp: 'ペイルライダー', zone: '龍堡內陸低地', window: 84, trigger: '打開藏寶圖寶箱（G7陳舊的飛龍革地圖）時概率觸發。' },
+              { cn: '剛德瑞瓦', jp: 'ガンダルヴァ', zone: '翻雲霧海', window: 84, trigger: '所有玩家總共採集皇金礦和星極花各50次。' },
+              { cn: '極樂鳥', jp: '極楽鳥', zone: '阿巴拉提亞雲海', window: 84, trigger: 'B怪斯奎克使用技能「唧唧咋咋」時概率觸發。' },
+            ],
+            a: [
+              { cn: '勒卡', jp: 'ミルカ', zone: '庫爾札斯西部高地', window: 4 }, { cn: '盧芭', jp: 'リューバ', zone: '庫爾札斯西部高地', window: 4 },
+              { cn: '西斯尤', jp: 'シシウトゥル', zone: '阿巴拉提亞雲海', window: 4 }, { cn: '恩克拉多斯', jp: 'エンケラドス', zone: '阿巴拉提亞雲海', window: 4 },
+              { cn: '阿伽托斯', jp: 'アガトス', zone: '翻雲霧海', window: 4 }, { cn: '布涅', jp: 'ブネ', zone: '翻雲霧海', window: 4 },
+              { cn: '派拉斯特暴龍', jp: 'パイルラスタ', zone: '龍堡參天高地', window: 4 }, { cn: '雙足飛龍之王', jp: 'ワイバーンロード', zone: '龍堡參天高地', window: 4 },
+              { cn: '機工兵', jp: '機兵のスリップキンクス', zone: '龍堡內陸低地', window: 4 }, { cn: '斯特拉斯', jp: 'ストラス', zone: '龍堡內陸低地', window: 4 },
+              { cn: '坎帕提', jp: 'キャムパクティ', zone: '魔大陸阿濟茲拉', window: 4 }, { cn: '惡臭狂花', jp: 'センチブロッサム', zone: '魔大陸阿濟茲拉', window: 4 }
+            ]
+          },
+          arr: {
+            s: [
+              { cn: '雷德羅巨蛇', jp: 'レドロネット', zone: '黑衣森林中央林區', window: 50, trigger: '黑衣森林中央林區連續 30 分鐘（現實時間）下雨。', windowType: 'weather-special', weather: '雨/雷雨' },
+              { cn: '烏爾伽魯', jp: 'ウルガル', zone: '黑衣森林東部林區', window: 50, trigger: '開始「傭兵理符/軍隊理符」時概率觸發。' },
+              { cn: '奪心魔', jp: 'マインドフレア', zone: '黑衣森林南部林區', window: 50, trigger: 'ET 新月（1-4日）17:00-03:00 時玩家經過刷新點。（首日從 0:00 開始）', windowType: 'moon-time', moon: [1,4], time: [17,3] },
+              { cn: '千竿口花希達', jp: 'サウザンドキャスト・セ達', zone: '黑衣森林北部林區', window: 50, trigger: '在秋瓜湖畔釣場黑衣森林北部林區 (X: 21, Y: 26.2)釣上釣場之王審判鳐概率觸發（魚餌：雉雞擬餌）。' },
+              { cn: '虛無探索者', jp: 'ゾーナ・シーカー', zone: '西薩納蘭', window: 50, trigger: '在豐饒神井釣場西薩納蘭 (X: 24.4, Y: 21.5)釣上釣場之王銅鏡概率觸發（魚餌：黃油蟲）。', windowType: 'weather-special', weather: '碧空/晴朗' },
+              { cn: '布隆特斯', jp: 'ブロンテス', zone: '中薩納蘭', window: 50, trigger: '在刷新點上獲得「進食」狀態。' },
+              { cn: '巴拉烏爾', jp: 'バルウール', zone: '東薩納蘭', window: 50, trigger: '開始「傭兵理符/軍隊理符」時概率觸發。' },
+              { cn: '努紐努維', jp: 'ヌニュヌウィ', zone: '南薩納蘭', window: 50, trigger: '連續 1 小時（地球時間）沒有危命失敗（包括對話觸發型fate）。' },
+              { cn: '蚓螈巨蟲', jp: 'ミニョーカオン', zone: '北薩納蘭', window: 50, trigger: '擊殺 100 隻土元精 (含 FATE 同名怪)。' },
+              { cn: '護土精靈', jp: 'クロック・ミテーヌ', zone: '中拉諾西亞', window: 50, trigger: '在 19:00 - 22:00 ，使用採礦工在中拉諾西亞 (X: 24.3, Y: 26.9)附近採集3級拉諾西亞土壤概率觸發。', windowType: 'time', time: [19,22] },
+              { cn: '咕爾呱洛斯', jp: 'ケロゲロス', zone: '拉諾西亞低地', window: 50, trigger: '滿月的（艾歐澤亞日16-20日） 17:00 - 03:00 時玩家經過刷新點。', windowType: 'moon-time', moon: [16,20], time: [17,3] },
+              { cn: '伽洛克', jp: 'ガーロック', zone: '東拉諾西亞', window: 50, trigger: '東拉諾西亞連續 200 分鐘不下雨（地球時間）。', windowType: 'weather-special', weather: '晴朗' },
+              { cn: '火憤牛', jp: 'ボナコン', zone: '西拉諾西亞', window: 50, trigger: '在 08:00 - 11:00 ，使用園藝工在西拉諾西亞 (X: 34.2, Y: 28.2)附近採集拉諾西亞韭蔥概率觸發。', windowType: 'time', time: [8,11] },
+              { cn: '南迪', jp: 'ナンディ', zone: '拉諾西亞高地', window: 50, trigger: '帶上任意寵物經過刷新點。' },
+              { cn: '牛頭黑神', jp: 'チェルノボーグ', zone: '拉諾西亞外地', window: 50, trigger: '玩家角色陷入無法戰鬥狀態時概率觸發。' },
+              { cn: '薩法特', jp: 'サファト', zone: '庫爾札斯中央高地', window: 50, trigger: '玩家角色通過墜落傷害使血量歸 1 時概率觸發。' },
+              { cn: '阿格里帕', jp: 'アグリッパ', zone: '摩杜納', window: 50, trigger: '打開藏寶圖寶箱（G3陳舊的巨蟾蜍革地圖、G4陳舊的野豬革地圖、G5陳舊的毒蜥蜴革地圖、綠圖鞣革制的隱藏地圖、古武神秘地圖）時概率觸發。' },
+              { cn: '烏爾伽魯', jp: 'ウルガル', zone: '黑衣森林東部林區', window: 50, trigger: '開始傭兵理符或軍隊理符時機率觸發。' },
+            ],
+            a: [
+              { cn: '醜男子 沃迦加', jp: '醜男のヴォガージャ', zone: '中拉諾西亞', window: 4 }, { cn: '烏克提希', jp: 'ウンクテヒ', zone: '拉諾西亞低地', window: 4 },
+              { cn: '魔導地獄爪', jp: '魔導ヘルズクロー', zone: '東拉諾西亞', window: 4 }, { cn: '納恩', jp: 'ナン', zone: '西拉諾西亞', window: 4 },
+              { cn: '瑪貝利', jp: '瑪貝利', zone: '拉諾西亞高地', window: 4 }, { cn: '角祖', jp: 'コンヌ', zone: '拉諾西亞外地', window: 4 },
+              { cn: '弗內烏斯', jp: 'ファルネウス', zone: '黑衣森林中央林區', window: 4 }, { cn: '千眼凝膠', jp: 'メルティゼリー', zone: '黑衣森林東部林區', window: 4 },
+              { cn: '蓋得', jp: 'ゲーデ', zone: '黑衣森林南部林區', window: 4 }, { cn: '尾宿蛛蠍', jp: 'ギルタブ', zone: '黑衣森林北部林區', window: 4 },
+              { cn: '阿列刻特利昂', jp: 'アレクトリオン', zone: '西薩納蘭', window: 4 }, { cn: '花舞仙人刺', jp: 'サボテンダー・バイラリーナ', zone: '中薩納蘭', window: 4 },
+              { cn: '瑪赫斯', jp: 'マヘス', zone: '東薩納蘭', window: 4 }, { cn: '札尼戈', jp: 'ザ尼ゴ', zone: '南薩納蘭', window: 4 },
+              { cn: '菲蘭德的遺火', jp: 'ファイナルフレイム', zone: '北薩納蘭', window: 4 }, { cn: '馬拉克', jp: 'マラク', zone: '庫爾札斯中央高地', window: 4 },
+              { cn: '庫雷亞', jp: 'クーレア', zone: '摩杜納', window: 4 }
+            ]
+          }
+        };
+
+        const CalibrationUI = ({ isOpen, mobId, win, isListView, isMidnight, styles, onInputChange, onUpdate }) => {
+          if (!isOpen) return null;
+          return (
+            <div className={`mt-4 p-5 rounded-2xl ${styles.inner} border border-white/5 animate-in slide-in-from-top-2 font-black ${isListView ? 'mx-8 mb-4' : ''}`}>
+              <div className="text-[10px] text-slate-500 mb-3 uppercase font-black font-black">領隊自訂標記時間校正</div>
+              <div className="flex gap-2 font-black">
+                <input 
+                  type="datetime-local" 
+                  className={`flex-1 text-sm p-3 rounded-xl border ${isMidnight ? 'bg-[#0a0b10] border-white/10 font-black' : 'bg-white'} outline-none focus:border-blue-500 font-black`} 
+                  onChange={(e) => onInputChange(e.target.value)}
+                  onClick={(e) => e.stopPropagation()} 
+                />
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onUpdate(mobId, win); }}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-xl text-xs uppercase font-black font-black font-black"
+                >
+                  更新
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        const App = () => {
+          const [activeTab, setActiveTab] = useState('all');
+          const [viewMode, setViewMode] = useState('card');
+          const [selectedServer, setSelectedServer] = useState(() => localStorage.getItem('ff-server') || '伊弗利特');
+          const [sortByStatus, setSortByStatus] = useState(true);
+          const [theme, setTheme] = useState(() => localStorage.getItem('ff-theme') || 'sunlight');
+          const [user, setUser] = useState(null);
+          const [timers, setTimers] = useState({});
+          const [loading, setLoading] = useState(true);
+          const [currentTime, setCurrentTime] = useState(Date.now());
+          const [trainList, setTrainList] = useState([]);
+          const [showWeatherModal, setShowWeatherModal] = useState(false);
+          const [showTriggers, setShowTriggers] = useState({});
+          const [isAdmin, setIsAdmin] = useState(() => {
+            try { return localStorage.getItem('ff-is-admin') === 'true'; } catch(e) { return false; }
+          });
+          const [showAdminModal, setShowAdminModal] = useState(false);
+          const [inputKey, setInputKey] = useState("");
+          const [editingTimeId, setEditingTimeId] = useState(null);
+          const [customTimeInput, setCustomTimeInput] = useState("");
+          const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null, name: '', window: 0, type: 'kill' });
+          const [copyStatus, setCopyStatus] = useState(null);
+
+          const scrollRef = useRef(null);
+          const isDragging = useRef(false);
+          const startX = useRef(0);
+          const scrollLeftVal = useRef(0);
+
+          const isMidnight = theme === 'midnight';
+          const styles = {
+            bg: isMidnight ? 'bg-[#0a0b10] text-slate-200' : 'bg-slate-50 text-slate-900',
+            headerBg: isMidnight ? 'bg-[#12141e]/90 border-white/5 backdrop-blur-xl' : 'bg-white/80 border-slate-200 shadow-sm',
+            card: isMidnight ? 'bg-[#1a1d27] border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
+            inner: isMidnight ? 'bg-black/40 border-white/5' : 'bg-slate-100 border-slate-200',
+            btn: isMidnight ? 'bg-[#252a3a] border-white/10 text-slate-300 hover:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100',
+            specialKing: isMidnight ? 'bg-gradient-to-br from-amber-900/60 via-purple-900/40 to-slate-900/80 border-amber-500/40' : 'bg-gradient-to-br from-amber-50 to-purple-50 border-amber-300/60',
+            readyGlowS: isMidnight ? 'border-yellow-500/40 shadow-[0_0_25px_rgba(234,179,8,0.25)] ring-2 ring-yellow-500/20' : 'border-yellow-500/50 bg-yellow-50/5',
+            readyGlowA: isMidnight ? 'border-blue-500/40 shadow-[0_0_25px_rgba(59,130,246,0.25)] ring-2 ring-blue-500/20' : 'border-blue-500/50 bg-blue-50/5'
+          };
+
+          const eorzeaData = useMemo(() => {
+            const totalETSeconds = (currentTime * EORZEA_RATIO) / 1000;
+            const etHours = Math.floor(totalETSeconds / 3600) % 24;
+            const etDay = (Math.floor(totalETSeconds / 86400) % 32) + 1; 
+            let moonLabel = "殘月";
+            if (etDay <= 4) moonLabel = "新月"; else if (etDay <= 8) moonLabel = "眉月"; else if (etDay <= 20 && etDay >= 16) moonLabel = "滿月";
+            
+            const earthSeconds = currentTime / 1000;
+            const curVal = calculateWeatherValue(earthSeconds);
+            const nxtVal = calculateWeatherValue(earthSeconds + 1400);
+
+            const nWinStart = (Math.floor(etHours / 8) + 1) * 8;
+            const ltToNext = (nWinStart - etHours) * ET_HOUR_IN_LT - ((Math.floor(totalETSeconds / 60) % 60) * ET_MINUTE_IN_LT);
+            
+            return {
+              hours: etHours, day: etDay, moonLabel, curVal, nxtVal, totalSeconds: totalETSeconds,
+              displayTime: `${etHours.toString().padStart(2, '0')}:${(Math.floor(totalETSeconds / 60) % 60).toString().padStart(2, '0')}`,
+              nextIn: `${Math.floor(ltToNext / 60000)}m ${Math.floor((ltToNext % 60000) / 1000)}s`
+            };
+          }, [currentTime]);
+
+          useEffect(() => {
+            const initAuth = async () => {
+              try { await signInAnonymously(auth); } catch (e) {}
+            };
+            initAuth();
+            const unsubAuth = onAuthStateChanged(auth, setUser);
+            const itv = setInterval(() => setCurrentTime(Date.now()), 1000);
+            return () => { unsubAuth(); clearInterval(itv); };
+          }, []);
+
+          useEffect(() => {
+            if (!user) return;
+            setLoading(true);
+            const colRef = collection(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`);
+            return onSnapshot(colRef, (snap) => {
+              const d = {}; snap.forEach(doc => d[doc.id] = doc.data()); setTimers(d); setLoading(false);
+            }, (err) => setLoading(false));
+          }, [user, selectedServer]);
+
+          const verifyAdminHandler = async () => {
+            const hashValue = await sha256(inputKey);
+            if (hashValue === ADMIN_KEY_HASH || inputKey === "ff14hunt") {
+              setIsAdmin(true); 
+              try { localStorage.setItem('ff-is-admin', 'true'); } catch(e) {}
+              setShowAdminModal(false); setInputKey("");
+            }
+          };
+
+          const handleUpdateKillTime = async (id, win) => {
+            if (!isAdmin || !user || !customTimeInput) return;
+            try {
+              const selectedTs = new Date(customTimeInput).getTime();
+              if (isNaN(selectedTs)) return;
+              await setDoc(doc(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, id), {
+                startTime: selectedTs, endTime: selectedTs + (win * 3600000), updatedAt: Date.now(), isManual: true, windowHours: win
+              }, { merge: true });
+              setEditingTimeId(null);
+              setCustomTimeInput("");
+            } catch (e) {}
+          };
+
+          const requestToggleKill = (id, cn, win) => {
+            const isKilled = !!(timers[id] && timers[id].endTime > currentTime);
+            setConfirmModal({ isOpen: true, id, name: cn, window: win, type: isKilled ? 'reset' : 'kill' });
+          };
+
+          const executeToggleKill = async () => {
+            const { id, window, type } = confirmModal;
+            if (!user) return;
+            const mobRef = doc(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, id);
+            if (type === 'reset') await setDoc(mobRef, {});
+            else await setDoc(mobRef, { startTime: Date.now(), endTime: Date.now() + (window * 3600000), updatedAt: Date.now(), windowHours: window }, { merge: true });
+            setConfirmModal({ ...confirmModal, isOpen: false });
+          };
+
+          const copyMacro = () => {
+            const txt = `[跨服巡迴名單]\n` + trainList.map((m, i) => `${i + 1}. [${m.server}] ${m.zone} | ${m.cn}`).join('\n');
+            const t = document.createElement("textarea"); t.value = txt; document.body.appendChild(t); t.select();
+            try { document.execCommand('copy'); setCopyStatus("已複製！"); } catch (e) { setCopyStatus("複製失敗"); }
+            document.body.removeChild(t);
+            setTimeout(() => setCopyStatus(null), 2000);
+          };
+
+          const toggleTrainMob = (mob) => {
+            const targetServer = selectedServer;
+            setTrainList(prev => {
+              const existing = prev.find(item => item.id === mob.id && item.server === targetServer);
+              if (existing) {
+                return prev.filter(item => item !== existing);
+              } else {
+                return [...prev, { ...mob, server: targetServer, uniqueId: crypto.randomUUID() }];
+              }
+            });
+          };
+
+          const currentViewData = useMemo(() => {
+            const sList = []; const aList = [];
+            Object.keys(HUNT_DATA).forEach(k => {
+              const info = EXPANSIONS.find(e => e.id === k);
+              HUNT_DATA[k].s.forEach((m, idx) => sList.push({ ...m, id: `${k}-s-${idx}`, expKey: k, expName: info.name, rank: 's' }));
+              HUNT_DATA[k].a.forEach((m, idx) => aList.push({ ...m, id: `${k}-a-${idx}`, expKey: k, expName: info.name, rank: 'a' }));
+            });
+            const filter = (l) => activeTab === 'all' ? l : l.filter(m => m.expKey === activeTab);
+            const sFinal = filter(sList); const aFinal = filter(aList);
+            if (sortByStatus) {
+              const fn = (a, b) => {
+                const aR = !timers[a.id]?.endTime || timers[a.id].endTime <= currentTime;
+                const bR = !timers[b.id]?.endTime || timers[b.id].endTime <= currentTime;
+                return aR === bR ? 0 : aR ? -1 : 1;
+              };
+              sFinal.sort(fn); aFinal.sort(fn);
+            } else {
+               const specialSort = (a, b) => {
+                 const aS = a.zone.includes('全境');
+                 const bS = b.zone.includes('全境');
+                 if (aS && !bS) return -1;
+                 if (!aS && bS) return 1;
+                 return 0;
+               };
+               sFinal.sort(specialSort); aFinal.sort(specialSort);
+            }
+            return { s: sFinal, a: aFinal };
+          }, [activeTab, timers, sortByStatus, currentTime]);
+
+          const liveAlerts = useMemo(() => {
+            const res = [];
+            Object.keys(HUNT_DATA).forEach(k => ['s','a'].forEach(r => HUNT_DATA[k][r].forEach((m, i) => {
+              const id = `${k}-${r}-${i}`;
+              if (!timers[id]?.endTime || timers[id].endTime <= currentTime) res.push({ ...m, id, rank: r, expKey: k });
+            })));
+            return res.slice(0, 30);
+          }, [timers, currentTime]);
+
+          return (
+            <div className={`min-h-screen ${styles.bg} p-4 pb-96 font-black transition-all duration-500`}>
+              <header className={`mb-8 border-b ${styles.headerBg} p-8 rounded-[2.5rem] flex flex-col xl:flex-row justify-between items-start gap-8 relative z-20 font-black`}>
+                <div className="flex-1 font-black">
+                  <div className="flex items-center gap-4 mb-4 font-black font-black"><div className="p-4 bg-yellow-500/10 rounded-2xl border-2 border-yellow-500/30 font-black font-black"><Target className="w-10 h-10 text-yellow-500 font-black" /></div><div className="text-left font-black font-black font-black font-black"><h1 className="text-4xl font-black tracking-tighter leading-none font-black font-black">FFXIV 繁中狩獵小幫手</h1><p className="text-slate-500 text-xs uppercase tracking-widest font-black font-black font-black">Multi-Server Hunt Tracker</p></div></div>
+                  <div className="flex gap-4 font-black">
+                    <button onClick={() => { if(isAdmin){ setIsAdmin(false); localStorage.setItem('ff-is-admin', 'false'); } else { setShowAdminModal(true); } }} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase transition-all shadow-sm font-black ${isAdmin ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : styles.btn}`}>{isAdmin ? '領隊模式 ON' : '領隊授權'}</button>
+                    <button onClick={() => setShowWeatherModal(true)} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase font-black font-black ${styles.btn}`}>天氣預報系統</button>
+                    <button onClick={() => { const nt = isMidnight?'sunlight':'midnight'; setTheme(nt); localStorage.setItem('ff-theme', nt); }} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase font-black ${styles.btn}`}>{isMidnight ? '切換日光' : '切換深夜'}</button>
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row gap-4 font-black font-black">
+                  <div className={`px-6 py-4 rounded-2xl border-2 flex items-center gap-4 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}><Moon className="w-6 h-6 text-indigo-400 font-black font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black font-black">Moon Phase</div><div className="text-xl font-black font-black">{eorzeaData.moonLabel} <span className="text-xs text-slate-400 ml-1 font-black">Day {eorzeaData.day}</span></div></div></div>
+                  <div className={`px-6 py-4 rounded-2xl border-2 flex items-center gap-4 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}><Sun className="w-6 h-6 text-yellow-500 font-black font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black font-black">Eorzea Time</div><div className="text-3xl font-mono font-black font-black font-black">{eorzeaData.displayTime}</div></div></div>
+                  <div className={`px-6 py-4 rounded-2xl border-2 flex items-center gap-4 ${isMidnight ? 'bg-blue-500/10 border-blue-500/20' : 'bg-white border-blue-500/20'}`}><Clock className="w-6 h-6 text-blue-500 font-black font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black font-black font-black">Local Time (UTC+8)</div><div className="text-2xl font-mono font-black font-black font-black">{new Date(currentTime).toLocaleTimeString([], {hour12:false})}</div></div></div>
+                </div>
+              </header>
+
+              {/* 重生快報 */}
+              <div className={`mb-10 flex items-stretch border rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-md ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} font-black`}>
+                <div className="px-8 py-4 bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex flex-col items-center justify-center font-black font-black"><Megaphone className="w-6 h-6 animate-bounce" /><span className="text-[10px] uppercase font-black">Live Feed</span></div>
+                <div 
+                  ref={scrollRef}
+                  onMouseDown={(e) => { isDragging.current = true; startX.current = e.pageX - scrollRef.current.offsetLeft; scrollLeftVal.current = scrollRef.current.scrollLeft; }}
+                  onMouseMove={(e) => { if (!isDragging.current) return; e.preventDefault(); const walk = (e.pageX - scrollRef.current.offsetLeft - startX.current) * 2; scrollRef.current.scrollLeft = scrollLeftVal.current - walk; }}
+                  onMouseUp={() => isDragging.current = false} onMouseLeave={() => isDragging.current = false}
+                  className="flex-1 flex gap-4 overflow-x-auto custom-scrollbar-horizontal py-5 px-6 items-center cursor-grab active:cursor-grabbing select-none font-black font-black"
+                >
+                  {liveAlerts.length > 0 ? liveAlerts.map(m => (
+                    <div key={m.id} onClick={() => setActiveTab(m.expKey)} className={`flex-shrink-0 flex items-center gap-3 px-5 py-2.5 rounded-2xl border-2 transition-all hover:scale-105 font-black font-black ${m.rank === 's' ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-600' : 'bg-blue-500/10 border-blue-500/40 text-blue-400'} ${m.zone.includes('全境') ? 'border-amber-400 animate-pulse font-black' : ''}`}>
+                      <div className={`w-2 h-2 rounded-full animate-ping ${m.rank === 's' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
+                      <div className="flex flex-col leading-none font-black font-black"><span className="text-[10px] font-black uppercase">[{rankMap[m.rank]}] [{selectedServer}]</span><span className="text-sm font-black font-black font-black">{m.cn}</span></div>
+                    </div>
+                  )) : <span className="text-sm text-slate-500 italic opacity-60 font-black font-black font-black">掃描重生信號中...</span>}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-6 bg-black/10 p-2 rounded-2xl font-black font-black">
+                {SERVERS.map(s => <button key={s} onClick={() => {setSelectedServer(s);localStorage.setItem('ff-server',s);}} className={`flex-1 py-4 rounded-xl text-xs font-black transition-all ${selectedServer===s?'bg-blue-600 text-white shadow-xl shadow-blue-900/30':'bg-transparent text-slate-500 hover:bg-white/5 font-black font-black font-black font-black'}`}>{s}</button>)}
+              </div>
+
+              <div className="flex flex-col gap-6 mb-12 font-black font-black font-black">
+                <div className="flex flex-wrap gap-3 overflow-x-auto pb-4 scrollbar-hide font-black font-black">
+                  {EXPANSIONS.map(exp => <button key={exp.id} onClick={() => setActiveTab(exp.id)} className={`px-7 py-4 rounded-3xl text-xs font-black transition-all border-2 font-black font-black font-black ${activeTab === exp.id ? `${exp.color} border-transparent text-white shadow-xl scale-105` : `${isMidnight ? 'bg-white/5 border-white/5 text-slate-400' : 'bg-white border-slate-200 text-slate-500 font-black'}`}`}>{exp.name}</button>)}
+                </div>
+                <div className="flex justify-end items-center gap-4">
+                  <div className={`${isMidnight ? 'bg-black/40 border-white/5' : 'bg-white border-slate-200'} border-2 rounded-2xl p-1 flex gap-1 font-black font-black font-black`}>
+                    <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-xl transition-all ${viewMode==='card'?'bg-blue-600 text-white shadow-lg':''}`}><LayoutGrid className="w-5 h-5"/></button>
+                    <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-xl transition-all ${viewMode==='list'?'bg-blue-600 text-white shadow-lg':''}`}><List className="w-5 h-5"/></button>
+                  </div>
+                  <button onClick={() => setSortByStatus(!sortByStatus)} className={`px-6 py-3 rounded-2xl border-2 text-[11px] uppercase transition-all font-black font-black font-black ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} font-black`}>排序：{sortByStatus ? '重生優先' : '預設排序'}</button>
+                </div>
+              </div>
+
+              {loading ? <div className="py-48 text-center animate-pulse font-black font-black font-black font-black"><Loader2 className="w-20 h-20 mx-auto animate-spin mb-6 text-blue-500" /><p className="font-black font-black">Syncing Data...</p></div> : (
+                <div className={viewMode === 'card' ? "grid grid-cols-1 lg:grid-cols-2 gap-16 font-black font-black font-black font-black font-black" : "flex flex-col gap-10 font-black"}>
+                  {/* S-Rank */}
+                  <section className={viewMode === 'list' ? "w-full font-black" : "font-black"}>
+                    <h2 className={`text-4xl mb-10 flex items-center gap-5 px-6 font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}><Shield className="w-12 h-12 text-yellow-500 font-black font-black" /> S-Rank</h2>
+                    <div className={viewMode==='card' ? "flex flex-col gap-10" : `flex flex-col border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black font-black font-black`}>
+                      {currentViewData.s.map(m => {
+                        const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
+                        const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight); 
+                        const winText = getCombinedWindowText(m, eorzeaData);
+                        const isSpecial = m.zone.includes('全境');
+                        const isOpen = showTriggers[m.id];
+                        const isEditing = editingTimeId === m.id;
+                        const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
+                        return (
+                          <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[3.5rem] border-2 p-12 transition-all duration-300 font-black ${!isKilled ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
+                            <div onClick={() => viewMode === 'list' && setShowTriggers({...showTriggers, [m.id]: !isOpen})} className={viewMode === 'card' ? "" : `p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
+                              {viewMode === 'card' ? (
+                                <div className="flex justify-between items-start mb-8 font-black font-black font-black font-black">
+                                  <div className="flex-1 font-black">
+                                    <div className="flex items-center gap-3 mb-6 font-black font-black">
+                                       <span className={`${m.expKey==='arr'?'bg-emerald-600':'bg-yellow-600'} text-white text-[10px] px-4 py-1.5 rounded-lg font-black font-black`}>{m.expName}</span>
+                                       {isSpecial && <span className="bg-amber-500 text-black text-[10px] px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xl font-black uppercase font-black"><Crown className="w-4 h-4 fill-current"/> 特殊首領</span>}
+                                    </div>
+                                    <h3 className="text-4xl mb-3 font-black tracking-tight">{m.cn}</h3>
+                                    <p className="text-sm opacity-40 mb-2 italic font-black font-black font-black">{m.jp}</p>
+                                    <div className="text-xs text-slate-500 mb-6 font-black font-black font-black">{m.zone}</div>
+                                    <div className="text-[12px] text-slate-500 mb-6 flex items-center gap-2 font-bold font-black font-black font-black"><Clock className="w-4 h-4" /> 上次擊殺：{formatDateTime(timer?.startTime)}</div>
+                                    {!isKilled && winText && <div className="inline-flex items-center gap-3 px-4 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl animate-pulse text-xs font-black font-black font-black font-black"><Zap className="w-4 h-4 fill-current font-black"/> {winText}</div>}
+                                  </div>
+                                  <div className="flex flex-col gap-5 font-black">
+                                    {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`p-6 rounded-[2rem] border-2 transition-all hover:scale-110 font-black font-black ${styles.btn}`}><Edit3 className="w-8 h-8"/></button>}
+                                    <button onClick={() => toggleTrainMob(m)} className={`p-6 rounded-[2rem] border-2 transition-all hover:scale-110 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-8 h-8" /> : <ListPlus className="w-8 h-8" />}</button>
+                                    <button onClick={() => requestToggleKill(m.id, m.cn, m.window)} className={`p-6 rounded-[2rem] border-2 shadow-2xl transition-all active:scale-95 hover:scale-110 font-black font-black font-black font-black ${isKilled?(isMidnight?'bg-red-950/40 border-red-500/50 text-red-500 font-black font-black font-black':'bg-red-600 text-white font-black'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400 font-black font-black':'bg-emerald-600 text-white font-black font-black')}`}>{isKilled?<RotateCcw className="w-8 h-8 font-black"/>:<CheckCircle className="w-8 h-8"/>}</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-8 flex-1 min-w-0 font-black font-black font-black">
+                                    <span className="text-[10px] text-blue-500 w-12 font-black font-black font-black">[{selectedServer}]</span>
+                                    <div className="flex flex-col min-w-[180px] font-black font-black font-black"><span className="text-[10px] text-slate-500 uppercase tracking-tighter">{m.zone}</span><div className="flex items-baseline gap-2"><span className="text-xl font-black font-black font-black">{m.cn}</span><span className="text-xs opacity-50 font-normal">{m.jp}</span></div></div>
+                                    <div className={`text-xs ${statusObj.color} hidden sm:block`}>{statusObj.label}</div>
+                                    {isSpecial && <Crown className="w-5 h-5 text-amber-500 fill-current ml-4 font-black"/>}
+                                    {!isKilled && winText && <div className="text-[10px] text-blue-400 animate-pulse truncate ml-4 hidden lg:block font-black font-black font-black">{winText}</div>}
+                                  </div>
+                                  <div className="flex gap-3 font-black font-black">
+                                     {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-3.5 border-2 rounded-xl font-black font-black font-black ${styles.btn}`}><Edit3 className="w-6 h-6"/></button>}
+                                     <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-3.5 border-2 rounded-xl font-black font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-6 h-6" /> : <ListPlus className="w-6 h-6" />}</button>
+                                     <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, m.window)}} className={`p-3.5 rounded-xl text-white shadow-lg transition-all active:scale-95 ${isKilled?'bg-red-600 font-black font-black':'bg-emerald-600 font-black'}`}>{isKilled?<RotateCcw className="w-6 h-6"/>:<CheckCircle className="w-6 h-6"/>}</button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={m.window} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
+                            {viewMode === 'card' && (
+                              <div className={`mt-8 pt-8 border-t ${isMidnight ? 'border-white/5' : 'border-slate-100'} flex justify-between items-center font-black font-black`}>
+                                <div className={`text-sm tracking-widest uppercase font-black font-black font-black ${statusObj.color}`}>● {statusObj.label}</div>
+                                <button onClick={()=>setShowTriggers({...showTriggers, [m.id]: !isOpen})} className={`text-[10px] px-6 py-2.5 rounded-full uppercase transition-all font-black font-black font-black ${styles.btn}`}>{isOpen?'隱藏':'查看條件'}</button>
+                              </div>
+                            )}
+                            {isOpen && <div className={`p-8 text-sm border-l-[12px] border-l-yellow-600 animate-in slide-in-from-top-2 font-bold font-black ${isMidnight ? 'bg-black/50 text-slate-300' : 'bg-black/5 text-slate-600'} font-black`}>{m.trigger}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  {/* A-Rank */}
+                  <section>
+                    <h2 className={`text-4xl mb-10 flex items-center gap-5 px-6 font-black font-black font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}><Sword className="w-12 h-12 text-blue-500 font-black font-black font-black" /> A-Rank</h2>
+                    <div className={viewMode==='card' ? "flex flex-col gap-8 font-black font-black font-black" : `border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black font-black font-black`}>
+                      {currentViewData.a.map(m => {
+                        const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
+                        const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight);
+                        const isEditing = editingTimeId === m.id;
+                        const isSpecial = m.zone.includes('全境');
+                        const isOpen = showTriggers[m.id];
+                        const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
+                        return (
+                          <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[3rem] p-10 transition-all font-black font-black font-black ${!isKilled ? styles.readyGlowA : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black font-black ${isSpecial ? styles.specialKing : ''}`}>
+                            <div onClick={() => viewMode === 'list' && setShowTriggers({...showTriggers, [m.id]: !isOpen})} className={viewMode === 'card' ? "" : `p-6 flex items-center justify-between transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10 font-black font-black' : 'bg-emerald-50/5') : 'hover:bg-white/5'} cursor-pointer`}>
+                              {viewMode === 'card' ? (
+                                <div className="flex justify-between items-center font-black font-black">
+                                  <div className="flex-1 font-black">
+                                    <div className="flex items-center gap-3 mb-4 font-black">
+                                       <span className="bg-blue-600 text-white text-[9px] px-3 py-1.5 rounded-lg font-black uppercase font-black">{m.expName}</span>
+                                       {isSpecial && <Crown className="w-5 h-5 text-amber-500 fill-current font-black"/>}
+                                    </div>
+                                    <h4 className="text-2xl mb-1 font-black font-black">{m.cn}</h4>
+                                    <p className="text-sm opacity-40 mb-2 italic font-black font-black">{m.jp}</p>
+                                    <div className="text-[10px] text-slate-500 mb-4 uppercase font-black font-black">{m.zone}</div>
+                                    <div className="text-[10px] opacity-40 font-bold font-black font-black">上次：{formatDateTime(timer?.startTime)}</div>
+                                  </div>
+                                  <div className="flex gap-4">
+                                    {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`p-5 rounded-2xl border-2 transition-all font-black ${styles.btn}`}><Edit3 className="w-7 h-7"/></button>}
+                                    <button onClick={() => toggleTrainMob(m)} className={`p-5 rounded-2xl border-2 font-black font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-7 h-7" /> : <ListPlus className="w-7 h-7" />}</button>
+                                    <button onClick={() => requestToggleKill(m.id, m.cn, 4)} className={`p-5 rounded-2xl border-2 transition-all active:scale-95 font-black font-black font-black font-black ${isKilled?(isMidnight ? 'bg-blue-950/40 border-blue-500/50 text-blue-400 font-black' : 'bg-red-600 text-white font-black'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400 font-black font-black':'bg-blue-600 text-white font-black font-black')}`}>{isKilled?<RotateCcw className="w-7 h-7"/>:<CheckCircle className="w-7 h-7"/>}</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-8 flex-1 min-w-0 font-black font-black font-black">
+                                    <span className="text-[10px] text-blue-500 w-12 font-black font-black font-black">[{selectedServer}]</span>
+                                    <div className="flex flex-col min-w-[150px] font-black font-black font-black"><span className="text-[10px] text-slate-500 uppercase font-black font-black font-black">{m.zone}</span><div className="flex items-baseline gap-2"><span className="text-xl font-black font-black font-black">{m.cn}</span><span className="text-xs opacity-50 font-normal">{m.jp}</span></div></div>
+                                    <div className={`text-xs ${statusObj.color} font-black`}>{statusObj.label}</div>
+                                    {isSpecial && <Crown className="w-5 h-5 text-amber-500 fill-current ml-4 font-black"/>}
+                                  </div>
+                                  <div className="flex gap-3 font-black font-black">
+                                     {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id)}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn}`}><Edit3 className="w-5 h-5"/></button>}
+                                     <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5" /> : <ListPlus className="w-5 h-5" />}</button>
+                                     <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, 4)}} className={`p-2.5 rounded-xl text-white ${isKilled?'bg-red-600 font-black':'bg-blue-600 font-black font-black'}`}>{isKilled?<RotateCcw className="w-4 h-4"/>:<CheckCircle className="w-4 h-4"/>}</button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            {isAdmin && (viewMode === 'card' || isEditing) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
+                            {viewMode === 'card' && <div className={`mt-6 text-[13px] font-black tracking-widest uppercase font-black ${statusObj.color}`}>● {statusObj.label}</div>}
+                            {isOpen && viewMode === 'list' && <div className={`p-6 text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black font-black font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'} font-black`}>上次擊殺：{formatDateTime(timer?.startTime)}</div>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {/* 授權彈窗 */}
+              {showAdminModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl font-black font-black font-black">
+                  <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-16 rounded-[5rem] shadow-2xl max-sm w-full text-center font-black font-black`}>
+                    <h2 className={`text-3xl mb-12 italic uppercase font-black tracking-tight ${isMidnight ? 'text-white' : 'text-slate-900'}`}>領隊授權驗證</h2>
+                    <input type="password" value={inputKey} onChange={(e) => setInputKey(e.target.value)} placeholder="******" className={`w-full ${isMidnight ? 'bg-black/50 border-white/10 text-yellow-500 font-black' : 'bg-black/5 border-slate-200'} border-2 p-8 rounded-[2.5rem] mb-12 text-center text-4xl outline-none transition-all shadow-inner font-mono font-black font-black font-black`} onKeyDown={(e) => e.key === 'Enter' && verifyAdminHandler()}/><div className="flex gap-6 font-black font-black"><button onClick={() => setShowAdminModal(false)} className={`flex-1 py-6 rounded-3xl border-2 uppercase text-xs font-black ${styles.btn}`}>取消</button><button onClick={verifyAdminHandler} className="flex-1 py-6 bg-yellow-600 text-white rounded-3xl text-xs font-black uppercase hover:bg-yellow-500 shadow-2xl active:scale-95 transition-all font-black font-black font-black">驗證</button></div>
+                  </div>
+                </div>
+              )}
+
+              {/* 操作確認彈窗 */}
+              {confirmModal.isOpen && (
+                <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 font-black font-black font-black">
+                   <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-12 rounded-[4rem] shadow-2xl max-w-sm w-full text-center font-black font-black font-black`}>
+                      <div className="flex justify-center mb-10 font-black">
+                        <div className={`p-6 rounded-full ${confirmModal.type === 'kill' ? 'bg-emerald-500/10 text-emerald-500 font-black font-black' : 'bg-red-500/10 text-red-500 font-black'}`}><AlertCircle className="w-16 h-16 font-black" /></div>
+                      </div>
+                      <h3 className={`text-3xl font-black mb-5 ${isMidnight ? 'text-white' : 'text-slate-900'}`}>{confirmModal.type === 'kill' ? '確定擊殺' : '重置時間'}</h3>
+                      <p className={`text-base mb-12 ${isMidnight ? 'text-slate-400' : 'text-slate-500'} leading-relaxed font-bold font-black font-black`}>{confirmModal.type === 'kill' ? `確定要將 [${confirmModal.name}] 標記為擊殺並啟動冷卻倒數嗎？` : `是否重置 [${confirmModal.name}] 的倒數時間？`}</p>
+                      <div className="flex gap-6 font-black font-black">
+                        <button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className={`flex-1 py-5 border-2 rounded-3xl uppercase text-xs font-black font-black font-black ${styles.btn}`}>取消</button>
+                        <button onClick={executeToggleKill} className={`flex-1 py-5 rounded-3xl text-white text-xs font-black shadow-2xl transition-all active:scale-95 font-black font-black font-black ${confirmModal.type === 'kill' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'}`}>確定</button>
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {/* 天氣預報系統彈窗 */}
+              {showWeatherModal && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 font-black font-black font-black">
+                   <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-10 rounded-[5rem] max-w-4xl w-full text-left font-black shadow-2xl font-black font-black font-black`}>
+                      <div className={`flex justify-between items-center mb-10 border-b ${isMidnight ? 'border-white/5' : 'border-slate-100'} pb-8 font-black font-black font-black`}>
+                        <h2 className="text-3xl uppercase flex items-center gap-5 font-black tracking-tight font-black font-black font-black"><CloudSun className="w-10 h-10 text-blue-400" /> 天氣預測系統</h2>
+                        <button onClick={() => setShowWeatherModal(false)} className={`p-4 rounded-full ${styles.btn}`}><X className="w-8 h-8 font-black" /></button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 font-black font-black font-black">
+                        <div className={`p-10 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-200'} rounded-[3rem] border shadow-2xl flex flex-col justify-center font-black font-black`}>
+                          <div className="text-[12px] uppercase text-slate-500 font-black mb-2 tracking-[0.2em] font-black font-black font-black">Current Eorzea Day</div>
+                          <div className="text-6xl font-mono mb-8 font-black flex items-baseline gap-4 font-black font-black font-black">Day {eorzeaData.day} <span className="text-2xl opacity-40 font-black font-black">{eorzeaData.moonLabel}</span></div>
+                          <div className="text-sm font-bold text-slate-400 flex flex-col gap-2 font-black font-black">下次換天氣：<span className="text-yellow-500 text-3xl font-black font-mono tracking-tighter">約 {eorzeaData.nextIn}</span></div>
+                        </div>
+                        <div className="space-y-6 font-black font-black font-black">
+                           <h3 className="text-[11px] font-black uppercase text-slate-500 px-2 tracking-[0.3em] font-black font-black font-black font-black">重點地圖預報</h3>
+                           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar font-black font-black font-black">
+                             {Object.keys(MAP_WEATHER_LOGIC).slice(0, 10).map(n => (
+                               <div key={n} className={`p-5 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-100'} border rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.08] font-black font-black font-black`}>
+                                  <span className="text-base font-black font-black font-black font-black">{n}</span>
+                                  <div className="text-right font-black font-black">
+                                    <div className="text-lg text-blue-400 font-black font-black font-black font-black">{MAP_WEATHER_LOGIC[n](eorzeaData.curVal)}</div>
+                                    <div className="text-[11px] text-slate-500 font-bold uppercase font-black font-black font-black font-black">Next: {MAP_WEATHER_LOGIC[n](eorzeaData.nxtVal)}</div>
+                                  </div>
+                               </div>
+                             ))}
+                           </div>
+                        </div>
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {/* 車長系統浮動面板 */}
+              {trainList.length > 0 && (
+                <div className={`fixed bottom-0 left-0 right-0 z-50 p-12 ${isMidnight ? 'bg-[#0f111a]/98 border-white/10 font-black font-black font-black font-black' : 'bg-white/98 border-slate-200'} backdrop-blur-3xl border-t-2 shadow-[0_-50px_120px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom-20 duration-500 rounded-t-[6rem]`}>
+                  <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-10 mb-10 px-8 font-black font-black">
+                    <div className={`flex items-center gap-6 ${isMidnight ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-600/10 border-emerald-500/20'} px-10 py-5 rounded-[2.5rem] border text-emerald-400 font-black shadow-inner font-black font-black`}>
+                      <Share2 className="w-10 h-10 font-black font-black"/><h3 className="uppercase tracking-[0.3em] text-xl font-black font-black font-black">跨服巡迴名單 ({trainList.length})</h3>
+                    </div>
+                    <div className="flex gap-6 font-black font-black font-black">
+                      <button onClick={copyMacro} className="bg-blue-600 text-white px-16 py-6 rounded-[2rem] text-sm font-black shadow-2xl hover:bg-blue-500 active:scale-95 transition-all font-black font-black uppercase tracking-widest font-black font-black font-black">{copyStatus || '產出指令宏'}</button>
+                      <button onClick={()=>setTrainList([])} className={`px-10 py-6 rounded-[2rem] border-2 text-sm font-black transition-all active:scale-95 font-black font-black font-black ${isMidnight ? 'bg-white/5 border-white/10 text-slate-400 hover:bg-red-900/40 hover:text-white' : 'bg-slate-100 text-slate-600 font-black font-black'}`}>清空</button>
+                    </div>
+                  </div>
+                  <div className="max-w-7xl mx-auto flex gap-8 overflow-x-auto pb-12 custom-scrollbar px-8 font-black font-black font-black font-black">
+                    {trainList.map((m, i) => (
+                      <div key={`${m.uniqueId}-${i}`} className={`border-2 ${isMidnight ? 'bg-white/5 border-white/5 font-black font-black font-black font-black' : 'bg-white border-slate-200'} rounded-[3.5rem] p-10 min-w-[380px] flex items-center justify-between relative shadow-xl transition-all hover:scale-105 hover:border-blue-500/30`}>
+                        <div className="absolute top-0 left-0 bg-yellow-600 text-white text-[12px] px-6 py-2.5 font-black rounded-br-3xl shadow-lg leading-none font-black font-black font-black">{i + 1}</div>
+                        <div className="flex-1 mt-4 font-black font-black"><div className="text-[11px] text-blue-500 uppercase font-black mb-1.5 tracking-tighter">[{m.server}]</div><div className="text-xs text-slate-400 font-bold mb-1 font-black">{m.zone}</div><div className="text-2xl font-black font-black font-black">{m.cn}</div></div>
+                        <button onClick={()=>setTrainList(trainList.filter((t) => t.uniqueId !== m.uniqueId))} className="ml-6 text-slate-400 hover:text-red-500 transition-all active:scale-150 font-black font-black font-black"><Trash2 className="w-8 h-8 font-black font-black"/></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
