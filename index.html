@@ -26,6 +26,10 @@
         body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #0f172a; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
 <body>
@@ -38,11 +42,15 @@
           Timer, Clock, Shield, Sword, CheckCircle, RotateCcw, Loader2, 
           ListPlus, Trash2, Share2, Lock, Unlock, Target, MapPin, Calendar, 
           Edit3, Sun, Moon, LayoutGrid, Heart, Zap, Megaphone, AlertCircle, 
-          X, CloudSun, Crown, List, Check 
+          X, CloudSun, Crown, List, Check, FileClock 
         } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-        import { getFirestore, doc, setDoc, onSnapshot, collection } from 'firebase/firestore';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+        import { 
+          getFirestore, doc, setDoc, onSnapshot, collection, 
+          addDoc, query, orderBy, limit, 
+		  getDocs, deleteDoc
+        } from 'firebase/firestore';
 
         const firebaseConfig = {
           apiKey: "AIzaSyAfHofjsLtR0L9xrbv4rbKRTDYfieQBOUc",
@@ -66,7 +74,6 @@
         const ET_MINUTE_IN_LT = ET_HOUR_IN_LT / 60;   
         const ET_DAY_IN_LT = ET_HOUR_IN_LT * 24;      
         const ADMIN_KEY_HASH = "def27bcefbd9af00d8309a531f1e6be478e741f5f49562555a81f9c53024ffa4";
-
         const SERVERS = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦'];
 
         const EXPANSIONS = [
@@ -327,6 +334,72 @@
           }
         };
 
+        const HistoryLogModal = ({ isOpen, onClose, server, mobId, mobName, isMidnight, styles }) => {
+          const [logs, setLogs] = useState([]);
+
+          useEffect(() => {
+            if (!isOpen || !mobId) return;
+            
+            const q = query(
+              collection(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${server}`, mobId, 'history'),
+			  orderBy('timestamp', 'desc'),
+              limit(50) 
+            );
+            
+            return onSnapshot(q, (snap) => {
+              const list = [];
+              snap.forEach(d => list.push({ ...d.data(), id: d.id }));
+              list.sort((a, b) => b.timestamp - a.timestamp);
+              setLogs(list);
+            });
+          }, [isOpen, server, mobId]);
+
+          if (!isOpen) return null;
+
+          return (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+              <div className={`${isMidnight ? 'bg-[#12141e] border-white/5 text-slate-300' : 'bg-white border-slate-200 text-slate-700'} border-2 rounded-[3rem] shadow-2xl w-full max-w-2xl flex flex-col max-h-[80vh]`}>
+                <div className="p-8 border-b border-white/5 flex justify-between items-center">
+                  <h3 className="text-2xl font-black flex items-center gap-3">
+                    <span className="bg-blue-600 text-white p-2 rounded-xl"><FileClock className="w-6 h-6" /></span>
+                    <span>{mobName} <span className="text-sm opacity-50 font-normal">({server})</span></span>
+                  </h3>
+                  <button onClick={onClose} className={`p-4 rounded-2xl ${styles.btn}`}><X className="w-6 h-6" /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-3">
+                  {logs.length === 0 ? (
+                    <div className="text-center opacity-50 py-10">尚無歷史紀錄</div>
+                  ) : (
+                    logs.map(log => (
+                      <div key={log.id} className={`p-4 rounded-2xl border flex items-center justify-between text-sm ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`text-[10px] font-mono px-2 py-1 rounded ${isMidnight?'bg-black/40 text-slate-400':'bg-slate-200 text-slate-500'}`}>
+                            {new Date(log.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                            <div className="text-[9px] opacity-50">{new Date(log.timestamp).toLocaleDateString()}</div>
+                          </div>
+                          <div>
+                            <div className="font-bold text-base flex items-center gap-2">
+                              <span className={`text-[10px] px-2 rounded border ${
+                                log.action === 'KILL' ? 'border-red-500/50 text-red-500' : 
+                                log.action === 'RESET' ? 'border-emerald-500/50 text-emerald-500' : 
+                                'border-blue-500/50 text-blue-500'
+                              }`}>
+                                {log.action === 'KILL' ? '擊殺' : log.action === 'RESET' ? '重置' : '手動'}
+                              </span>
+                            </div>
+                            <div className="opacity-60 text-xs mt-1">{log.details}</div>
+                          </div>
+                        </div>
+                        <div className="text-[10px] opacity-40 text-right">by {log.userLabel}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
         const CalibrationUI = ({ isOpen, mobId, win, isListView, isMidnight, styles, onInputChange, onUpdate }) => {
           if (!isOpen) return null;
           return (
@@ -372,6 +445,7 @@
           const [customTimeInput, setCustomTimeInput] = useState("");
           const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null, name: '', window: 0, type: 'kill' });
           const [copyStatus, setCopyStatus] = useState(null);
+          const [historyTarget, setHistoryTarget] = useState({ isOpen: false, mobId: null, mobName: '' }); 
 
           const scrollRef = useRef(null);
           const isDragging = useRef(false);
@@ -389,6 +463,31 @@
             readyGlowS: isMidnight ? 'border-yellow-500/40 shadow-[0_0_25px_rgba(234,179,8,0.25)] ring-2 ring-yellow-500/20' : 'border-yellow-500/50 bg-yellow-50/5',
             readyGlowA: isMidnight ? 'border-blue-500/40 shadow-[0_0_25px_rgba(59,130,246,0.25)] ring-2 ring-blue-500/20' : 'border-blue-500/50 bg-blue-50/5'
           };
+
+		const logAction = async (mobId, mobName, actionType, details = "") => {
+		  try {
+			const historyRef = collection(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, mobId, 'history');
+
+			await addDoc(historyRef, {
+			  mobName,
+			  action: actionType, 
+			  details,
+			  timestamp: Date.now(),
+			  userLabel: isAdmin ? '領隊 (Admin)' : '獵人 (Hunter)' 
+			});
+
+			const q = query(historyRef, orderBy('timestamp', 'desc'));
+			const snapshot = await getDocs(q);
+			
+			if (snapshot.size > 50) {
+			  const toDelete = snapshot.docs.slice(50);
+			  toDelete.forEach(async (docSnapshot) => {
+				await deleteDoc(docSnapshot.ref);
+			  });
+			}
+
+		  } catch (e) { console.error("Log error:", e); }
+		};
 
           const eorzeaData = useMemo(() => {
             const totalETSeconds = (currentTime * EORZEA_RATIO) / 1000;
@@ -449,6 +548,9 @@
               await setDoc(doc(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, id), {
                 startTime: selectedTs, endTime: selectedTs + (win * 3600000), updatedAt: Date.now(), isManual: true, windowHours: win
               }, { merge: true });
+              
+              logAction(id, id, 'EDIT', `手動調整時間至 ${new Date(customTimeInput).toLocaleTimeString()}`);
+
               setEditingTimeId(null);
               setCustomTimeInput("");
             } catch (e) {}
@@ -460,16 +562,22 @@
           };
 
           const executeToggleKill = async () => {
-            const { id, window, type } = confirmModal;
+            const { id, window, type, name } = confirmModal;
             if (!user) return;
             const mobRef = doc(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, id);
-            if (type === 'reset') await setDoc(mobRef, {});
-            else await setDoc(mobRef, { startTime: Date.now(), endTime: Date.now() + (window * 3600000), updatedAt: Date.now(), windowHours: window }, { merge: true });
+            if (type === 'reset') {
+               await setDoc(mobRef, {});
+               logAction(id, name, 'RESET', '重置了計時器'); 
+            }
+            else {
+               await setDoc(mobRef, { startTime: Date.now(), endTime: Date.now() + (window * 3600000), updatedAt: Date.now(), windowHours: window }, { merge: true });
+               logAction(id, name, 'KILL', `標記擊殺，冷卻 ${window} 小時`); 
+            }
             setConfirmModal({ ...confirmModal, isOpen: false });
           };
 
           const copyMacro = () => {
-            const txt = `[跨服巡迴名單]\n` + trainList.map((m, i) => `${i + 1}. [${m.server}] ${m.zone} | ${m.cn}`).join('\n');
+            const txt = `[巡迴名單]\n` + trainList.map((m, i) => `${i + 1}. [${m.server}] ${m.zone} | ${m.cn}`).join('\n');
             const t = document.createElement("textarea"); t.value = txt; document.body.appendChild(t); t.select();
             try { document.execCommand('copy'); setCopyStatus("已複製！"); } catch (e) { setCopyStatus("複製失敗"); }
             document.body.removeChild(t);
@@ -490,10 +598,15 @@
 
           const currentViewData = useMemo(() => {
             const sList = []; const aList = [];
-            Object.keys(HUNT_DATA).forEach(k => {
+            const safeData = {...HUNT_DATA};
+            if(!safeData.dt) safeData.dt = {s:[], a:[]}; 
+
+            Object.keys(safeData).forEach(k => {
               const info = EXPANSIONS.find(e => e.id === k);
-              HUNT_DATA[k].s.forEach((m, idx) => sList.push({ ...m, id: `${k}-s-${idx}`, expKey: k, expName: info.name, rank: 's' }));
-              HUNT_DATA[k].a.forEach((m, idx) => aList.push({ ...m, id: `${k}-a-${idx}`, expKey: k, expName: info.name, rank: 'a' }));
+              if (info) {
+                  if (safeData[k].s) safeData[k].s.forEach((m, idx) => sList.push({ ...m, id: `${k}-s-${idx}`, expKey: k, expName: info.name, rank: 's' }));
+                  if (safeData[k].a) safeData[k].a.forEach((m, idx) => aList.push({ ...m, id: `${k}-a-${idx}`, expKey: k, expName: info.name, rank: 'a' }));
+              }
             });
             const filter = (l) => activeTab === 'all' ? l : l.filter(m => m.expKey === activeTab);
             const sFinal = filter(sList); const aFinal = filter(aList);
@@ -519,10 +632,16 @@
 
           const liveAlerts = useMemo(() => {
             const res = [];
-            Object.keys(HUNT_DATA).forEach(k => ['s','a'].forEach(r => HUNT_DATA[k][r].forEach((m, i) => {
-              const id = `${k}-${r}-${i}`;
-              if (!timers[id]?.endTime || timers[id].endTime <= currentTime) res.push({ ...m, id, rank: r, expKey: k });
-            })));
+            Object.keys(HUNT_DATA).forEach(k => {
+                if(HUNT_DATA[k].s) HUNT_DATA[k].s.forEach((m, i) => {
+                   const id = `${k}-s-${i}`;
+                   if (!timers[id]?.endTime || timers[id].endTime <= currentTime) res.push({ ...m, id, rank: 's', expKey: k });
+                });
+                if(HUNT_DATA[k].a) HUNT_DATA[k].a.forEach((m, i) => {
+                   const id = `${k}-a-${i}`;
+                   if (!timers[id]?.endTime || timers[id].endTime <= currentTime) res.push({ ...m, id, rank: 'a', expKey: k });
+                });
+            });
             return res.slice(0, 30);
           }, [timers, currentTime]);
 
@@ -530,10 +649,11 @@
             <div className={`min-h-screen ${styles.bg} p-4 pb-96 font-black transition-all duration-500`}>
               <header className={`mb-8 border-b ${styles.headerBg} p-8 rounded-[2.5rem] flex flex-col xl:flex-row justify-between items-start gap-8 relative z-20 font-black`}>
                 <div className="flex-1 font-black">
-                  <div className="flex items-center gap-4 mb-4 font-black font-black"><div className="p-4 bg-yellow-500/10 rounded-2xl border-2 border-yellow-500/30 font-black font-black"><Target className="w-10 h-10 text-yellow-500 font-black" /></div><div className="text-left font-black font-black font-black font-black"><h1 className="text-4xl font-black tracking-tighter leading-none font-black font-black">FFXIV 繁中狩獵小幫手</h1><p className="text-slate-500 text-xs uppercase tracking-widest font-black font-black font-black">Multi-Server Hunt Tracker</p></div></div>
+                  <div className="flex items-center gap-4 mb-4 font-black font-black"><div className="p-4 bg-yellow-500/10 rounded-2xl border-2 border-yellow-500/30 font-black font-black"><Target className="w-10 h-10 text-yellow-500 font-black" /></div><div className="text-left font-black font-black font-black font-black"><h1 className="text-4xl font-black tracking-tighter leading-none font-black font-black">FFXIV 繁中狩獵小幫手</h1><p className="text-slate-500 text-xs uppercase tracking-widest font-black font-black font-black">Multi-Server Hunt Tracker v2.1</p></div></div>
                   <div className="flex gap-4 font-black">
                     <button onClick={() => { if(isAdmin){ setIsAdmin(false); localStorage.setItem('ff-is-admin', 'false'); } else { setShowAdminModal(true); } }} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase transition-all shadow-sm font-black ${isAdmin ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : styles.btn}`}>{isAdmin ? '領隊模式 ON' : '領隊授權'}</button>
                     <button onClick={() => setShowWeatherModal(true)} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase font-black font-black ${styles.btn}`}>天氣預報系統</button>
+                    {/* 移除全域歷史按鈕，改為各怪獨立 */}
                     <button onClick={() => { const nt = isMidnight?'sunlight':'midnight'; setTheme(nt); localStorage.setItem('ff-theme', nt); }} className={`px-5 py-2.5 rounded-xl border-2 text-[11px] uppercase font-black ${styles.btn}`}>{isMidnight ? '切換日光' : '切換深夜'}</button>
                   </div>
                 </div>
@@ -610,6 +730,7 @@
                                   </div>
                                   <div className="flex flex-col gap-5 font-black">
                                     {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`p-6 rounded-[2rem] border-2 transition-all hover:scale-110 font-black font-black ${styles.btn}`}><Edit3 className="w-8 h-8"/></button>}
+                                    <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-6 rounded-[2rem] border-2 transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-8 h-8" /></button>
                                     <button onClick={() => toggleTrainMob(m)} className={`p-6 rounded-[2rem] border-2 transition-all hover:scale-110 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-8 h-8" /> : <ListPlus className="w-8 h-8" />}</button>
                                     <button onClick={() => requestToggleKill(m.id, m.cn, m.window)} className={`p-6 rounded-[2rem] border-2 shadow-2xl transition-all active:scale-95 hover:scale-110 font-black font-black font-black font-black ${isKilled?(isMidnight?'bg-red-950/40 border-red-500/50 text-red-500 font-black font-black font-black':'bg-red-600 text-white font-black'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400 font-black font-black':'bg-emerald-600 text-white font-black font-black')}`}>{isKilled?<RotateCcw className="w-8 h-8 font-black"/>:<CheckCircle className="w-8 h-8"/>}</button>
                                   </div>
@@ -625,6 +746,7 @@
                                   </div>
                                   <div className="flex gap-3 font-black font-black">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-3.5 border-2 rounded-xl font-black font-black font-black ${styles.btn}`}><Edit3 className="w-6 h-6"/></button>}
+                                     <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-3.5 border-2 rounded-xl font-black ${styles.btn}`}><FileClock className="w-6 h-6" /></button>
                                      <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-3.5 border-2 rounded-xl font-black font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-6 h-6" /> : <ListPlus className="w-6 h-6" />}</button>
                                      <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, m.window)}} className={`p-3.5 rounded-xl text-white shadow-lg transition-all active:scale-95 ${isKilled?'bg-red-600 font-black font-black':'bg-emerald-600 font-black'}`}>{isKilled?<RotateCcw className="w-6 h-6"/>:<CheckCircle className="w-6 h-6"/>}</button>
                                   </div>
@@ -644,8 +766,8 @@
                       })}
                     </div>
                   </section>
-
-                  <section>
+                  
+                   <section>
                     <h2 className={`text-4xl mb-10 flex items-center gap-5 px-6 font-black font-black font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}><Sword className="w-12 h-12 text-blue-500 font-black font-black font-black" /> A-Rank</h2>
                     <div className={viewMode==='card' ? "flex flex-col gap-8 font-black font-black font-black" : `border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black font-black font-black`}>
                       {currentViewData.a.map(m => {
@@ -672,6 +794,8 @@
                                   </div>
                                   <div className="flex gap-4">
                                     {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`p-5 rounded-2xl border-2 transition-all font-black ${styles.btn}`}><Edit3 className="w-7 h-7"/></button>}
+                                    {/* A怪的歷史紀錄按鈕 */}
+                                    <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-5 rounded-2xl border-2 transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-7 h-7" /></button>
                                     <button onClick={() => toggleTrainMob(m)} className={`p-5 rounded-2xl border-2 font-black font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-7 h-7" /> : <ListPlus className="w-7 h-7" />}</button>
                                     <button onClick={() => requestToggleKill(m.id, m.cn, 4)} className={`p-5 rounded-2xl border-2 transition-all active:scale-95 font-black font-black font-black font-black ${isKilled?(isMidnight ? 'bg-blue-950/40 border-blue-500/50 text-blue-400 font-black' : 'bg-red-600 text-white font-black'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400 font-black font-black':'bg-blue-600 text-white font-black font-black')}`}>{isKilled?<RotateCcw className="w-7 h-7"/>:<CheckCircle className="w-7 h-7"/>}</button>
                                   </div>
@@ -686,13 +810,15 @@
                                   </div>
                                   <div className="flex gap-3 font-black font-black">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id)}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn}`}><Edit3 className="w-5 h-5"/></button>}
+                                     {/* A怪的歷史紀錄按鈕 (List模式) */}
+                                     <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn}`}><FileClock className="w-5 h-5" /></button>
                                      <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-2.5 rounded-xl border-2 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5" /> : <ListPlus className="w-5 h-5" />}</button>
                                      <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, 4)}} className={`p-2.5 rounded-xl text-white ${isKilled?'bg-red-600 font-black':'bg-blue-600 font-black font-black'}`}>{isKilled?<RotateCcw className="w-4 h-4"/>:<CheckCircle className="w-4 h-4"/>}</button>
                                   </div>
                                 </>
                               )}
                             </div>
-                            {isAdmin && (viewMode === 'card' || isEditing) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
+                            {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
                             {viewMode === 'card' && <div className={`mt-6 text-[13px] font-black tracking-widest uppercase font-black ${statusObj.color}`}>● {statusObj.label}</div>}
                             {isOpen && viewMode === 'list' && <div className={`p-6 text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black font-black font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'} font-black`}>上次擊殺：{formatDateTime(timer?.startTime)}</div>}
                           </div>
@@ -703,6 +829,7 @@
                 </div>
               )}
 
+              {/* Admin Modal */}
               {showAdminModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl font-black font-black font-black">
                   <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-16 rounded-[5rem] shadow-2xl max-sm w-full text-center font-black font-black`}>
@@ -712,9 +839,10 @@
                 </div>
               )}
 
+              {/* Confirm Modal */}
               {confirmModal.isOpen && (
                 <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 font-black font-black font-black">
-                   <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-12 rounded-[4rem] shadow-2xl max-w-sm w-full text-center font-black font-black font-black`}>
+                    <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-12 rounded-[4rem] shadow-2xl max-w-sm w-full text-center font-black font-black font-black`}>
                       <div className="flex justify-center mb-10 font-black">
                         <div className={`p-6 rounded-full ${confirmModal.type === 'kill' ? 'bg-emerald-500/10 text-emerald-500 font-black font-black' : 'bg-red-500/10 text-red-500 font-black'}`}><AlertCircle className="w-16 h-16 font-black" /></div>
                       </div>
@@ -724,13 +852,14 @@
                         <button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className={`flex-1 py-5 border-2 rounded-3xl uppercase text-xs font-black font-black font-black ${styles.btn}`}>取消</button>
                         <button onClick={executeToggleKill} className={`flex-1 py-5 rounded-3xl text-white text-xs font-black shadow-2xl transition-all active:scale-95 font-black font-black font-black ${confirmModal.type === 'kill' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'}`}>確定</button>
                       </div>
-                   </div>
+                    </div>
                 </div>
               )}
 
+              {/* Weather Modal */}
               {showWeatherModal && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 font-black font-black font-black">
-                   <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-10 rounded-[5rem] max-w-4xl w-full text-left font-black shadow-2xl font-black font-black font-black`}>
+                    <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-10 rounded-[5rem] max-w-4xl w-full text-left font-black shadow-2xl font-black font-black font-black`}>
                       <div className={`flex justify-between items-center mb-10 border-b ${isMidnight ? 'border-white/5' : 'border-slate-100'} pb-8 font-black font-black font-black`}>
                         <h2 className="text-3xl uppercase flex items-center gap-5 font-black tracking-tight font-black font-black font-black"><CloudSun className="w-10 h-10 text-blue-400" /> 天氣預測系統</h2>
                         <button onClick={() => setShowWeatherModal(false)} className={`p-4 rounded-full ${styles.btn}`}><X className="w-8 h-8 font-black" /></button>
@@ -744,7 +873,7 @@
                         <div className="space-y-6 font-black font-black font-black">
                            <h3 className="text-[11px] font-black uppercase text-slate-500 px-2 tracking-[0.3em] font-black font-black font-black font-black">重點地圖預報</h3>
                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar font-black font-black font-black">
-                             {Object.keys(MAP_WEATHER_LOGIC).slice(0, 10).map(n => (
+                             {Object.keys(MAP_WEATHER_LOGIC).map(n => (
                                <div key={n} className={`p-5 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-100'} border rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.08] font-black font-black font-black`}>
                                   <span className="text-base font-black font-black font-black font-black">{n}</span>
                                   <div className="text-right font-black font-black">
@@ -756,10 +885,22 @@
                            </div>
                         </div>
                       </div>
-                   </div>
+                    </div>
                 </div>
               )}
 
+              {/* History Log Modal (Single Target) */}
+              <HistoryLogModal 
+                isOpen={historyTarget.isOpen} 
+                onClose={() => setHistoryTarget({...historyTarget, isOpen: false})} 
+                server={selectedServer} 
+                mobId={historyTarget.mobId}
+                mobName={historyTarget.mobName}
+                isMidnight={isMidnight} 
+                styles={styles} 
+              />
+
+              {/* Train List Overlay */}
               {trainList.length > 0 && (
                 <div className={`fixed bottom-0 left-0 right-0 z-50 p-12 ${isMidnight ? 'bg-[#0f111a]/98 border-white/10 font-black font-black font-black font-black' : 'bg-white/98 border-slate-200'} backdrop-blur-3xl border-t-2 shadow-[0_-50px_120px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom-20 duration-500 rounded-t-[6rem]`}>
                   <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-10 mb-10 px-8 font-black font-black">
@@ -790,7 +931,4 @@
         root.render(<App />);
     </script>
 </body>
-
 </html>
-
-
