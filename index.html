@@ -179,31 +179,44 @@
 		const getCombinedWindowText = (m, eorzeaData) => {
           if (!m.windowType) return null;
           const currentUnix = Date.now() / 1000;
+          const ET_HOUR_SEC = 175;
           const weatherBaseTime = Math.floor(currentUnix / 1400) * 1400;
           for (let i = 0; i < 450; i++) {
-            const checkTime = weatherBaseTime + (i * 1400);        
+            const checkTime = weatherBaseTime + (i * 1400); 
             const checkETTotal = checkTime * (1440/70); 
             const checkETHours = (checkETTotal / 3600) % 24;
-            const moonPhase = (Math.floor(checkETTotal / 86400) + 1) % 32;
-            const moonDay = moonPhase === 0 ? 32 : moonPhase; 
             const weatherVal = calculateWeatherValue(Math.floor(checkTime));
             const weatherName = getWeather(m.zone, weatherVal);
-            const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
-            let isTime = true;
-            if (m.time) {
-                const [start, end] = m.time;
-                if (start < end) {
-                    isTime = (checkETHours >= start && checkETHours < end);
-                } else {
-                    isTime = (checkETHours >= start || checkETHours < end);
-                }
-            }
             const isW = m.weather ? (m.weather.includes(weatherName)) : true;
-            if (isMoon && isW && isTime) {
-                const waitSeconds = checkTime - currentUnix;
+            
+            const moonPhase = (Math.floor(checkETTotal / 86400) + 1) % 32;
+            const moonDay = moonPhase === 0 ? 32 : moonPhase; 
+            const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
+
+            if (isW && isMoon) {
+                let foundOffset = -1;
+                for (let h = 0; h < 8; h++) {
+                    const currentETHour = (checkETHours + h) % 24;
+                    let isTimeValid = true;
+                    if (m.time) {
+                        const [start, end] = m.time;
+                        if (start < end) {
+                            isTimeValid = (currentETHour >= start && currentETHour < end);
+                        } else {
+                            isTimeValid = (currentETHour >= start || currentETHour < end);
+                        }
+                    }
+                    if (isTimeValid) {
+                        foundOffset = h;
+                        break;
+                    }
+                }
+                if (foundOffset === -1) continue;
+                const targetTime = checkTime + (foundOffset * ET_HOUR_SEC);
+                const waitSeconds = targetTime - currentUnix;
                 if (waitSeconds <= 0) {
                      if (checkTime + 1400 > currentUnix) return "窗口符合條件";
-                     continue; 
+                     continue;
                 }
                 const days = Math.floor(waitSeconds / 86400);
                 const h = Math.floor((waitSeconds % 86400) / 3600);
@@ -217,7 +230,7 @@
                 return `理論：約 ${h}h ${mm}m ${ss}s`;
             }
           }
-          return "一週內沒有符合條件";
+          return "一週內無符合條件";
         };
 
         async function sha256(message) {
@@ -958,6 +971,7 @@
     </script>
 </body>
 </html>
+
 
 
 
