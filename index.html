@@ -24,7 +24,6 @@
 
     <style>
         body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #0f172a; }
-        /* 隱藏滾動條但保留功能 */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -46,26 +45,20 @@
         import { getFirestore, doc, setDoc, onSnapshot, collection } from 'firebase/firestore';
 
         const firebaseConfig = {
-		  apiKey: "AIzaSyAfHofjsLtR0L9xrbv4rbKRTDYfieQBOUc",
-		  authDomain: "ff14-hunt.firebaseapp.com",
-		  projectId: "ff14-hunt",
-		  storageBucket: "ff14-hunt.firebasestorage.app",
-		  messagingSenderId: "685554694198",
-		  appId: "1:685554694198:web:6878dc79d6a5876e0d4097",
-		  measurementId: "G-55QRR4WL2E"
-		};
+          apiKey: "AIzaSyAfHofjsLtR0L9xrbv4rbKRTDYfieQBOUc",
+          authDomain: "ff14-hunt.firebaseapp.com",
+          projectId: "ff14-hunt",
+          storageBucket: "ff14-hunt.firebasestorage.app",
+          messagingSenderId: "685554694198",
+          appId: "1:685554694198:web:6878dc79d6a5876e0d4097",
+          measurementId: "G-55QRR4WL2E"
+        };
 
-        // 初始化 Firebase
         const fbApp = initializeApp(firebaseConfig);
         const auth = getAuth(fbApp);
         const db = getFirestore(fbApp);
         
-        // 固定的 App ID (用來區分資料庫中的資料夾)
         const appIdGlobal = 'ffxiv-hunt-stable-final-v24';
-
-        // ==========================================
-        // 以下是您的狩獵工具核心邏輯 (已整合)
-        // ==========================================
 
         const rankMap = { s: 'S', a: 'A', ss: 'SS' };
         const EORZEA_RATIO = 1440 / 70; 
@@ -86,7 +79,6 @@
           { id: 'arr', name: '新生艾奧傑亞', sub: '2.0', color: 'bg-emerald-600' },
         ];
 
-        // --- 天氣系統核心演算法 ---
         const calculateWeatherValue = (unixSeconds) => {
           const timeBlock = Math.floor(unixSeconds / 1400);
           const startHour = ((timeBlock + 1) % 3) * 8;
@@ -141,7 +133,6 @@
           '東拉諾西亞': (v) => getWeather('東拉諾西亞', v),
         };
 
-        // --- 輔助函式 ---
         const formatDateTime = (ts) => {
           if (!ts) return "無紀錄";
           const d = new Date(ts);
@@ -197,7 +188,6 @@
           } catch (e) { return message; }
         }
 
-        // --- 怪物數據庫 ---
         const HUNT_DATA = {
           dt: {
             s: [
@@ -545,7 +535,6 @@
                 </div>
               </header>
 
-              {/* 重生快報 */}
               <div className={`mb-10 flex items-stretch border rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-md ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} font-black`}>
                 <div className="px-8 py-4 bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex flex-col items-center justify-center font-black font-black"><Megaphone className="w-6 h-6 animate-bounce" /><span className="text-[10px] uppercase font-black">Live Feed</span></div>
                 <div 
@@ -583,7 +572,6 @@
 
               {loading ? <div className="py-48 text-center animate-pulse font-black font-black font-black font-black"><Loader2 className="w-20 h-20 mx-auto animate-spin mb-6 text-blue-500" /><p className="font-black font-black">Syncing Data...</p></div> : (
                 <div className={viewMode === 'card' ? "grid grid-cols-1 lg:grid-cols-2 gap-16 font-black font-black font-black font-black font-black" : "flex flex-col gap-10 font-black"}>
-                  {/* S-Rank */}
                   <section className={viewMode === 'list' ? "w-full font-black" : "font-black"}>
                     <h2 className={`text-4xl mb-10 flex items-center gap-5 px-6 font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}><Shield className="w-12 h-12 text-yellow-500 font-black font-black" /> S-Rank</h2>
                     <div className={viewMode==='card' ? "flex flex-col gap-10" : `flex flex-col border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black font-black font-black`}>
@@ -648,7 +636,6 @@
                     </div>
                   </section>
 
-                  {/* A-Rank */}
                   <section>
                     <h2 className={`text-4xl mb-10 flex items-center gap-5 px-6 font-black font-black font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}><Sword className="w-12 h-12 text-blue-500 font-black font-black font-black" /> A-Rank</h2>
                     <div className={viewMode==='card' ? "flex flex-col gap-8 font-black font-black font-black" : `border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black font-black font-black`}>
@@ -707,7 +694,6 @@
                 </div>
               )}
 
-              {/* 授權彈窗 */}
               {showAdminModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl font-black font-black font-black">
                   <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-16 rounded-[5rem] shadow-2xl max-sm w-full text-center font-black font-black`}>
@@ -717,7 +703,6 @@
                 </div>
               )}
 
-              {/* 操作確認彈窗 */}
               {confirmModal.isOpen && (
                 <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 font-black font-black font-black">
                    <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-12 rounded-[4rem] shadow-2xl max-w-sm w-full text-center font-black font-black font-black`}>
@@ -734,7 +719,6 @@
                 </div>
               )}
 
-              {/* 天氣預報系統彈窗 */}
               {showWeatherModal && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 font-black font-black font-black">
                    <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-10 rounded-[5rem] max-w-4xl w-full text-left font-black shadow-2xl font-black font-black font-black`}>
@@ -767,7 +751,6 @@
                 </div>
               )}
 
-              {/* 車長系統浮動面板 */}
               {trainList.length > 0 && (
                 <div className={`fixed bottom-0 left-0 right-0 z-50 p-12 ${isMidnight ? 'bg-[#0f111a]/98 border-white/10 font-black font-black font-black font-black' : 'bg-white/98 border-slate-200'} backdrop-blur-3xl border-t-2 shadow-[0_-50px_120px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom-20 duration-500 rounded-t-[6rem]`}>
                   <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-10 mb-10 px-8 font-black font-black">
