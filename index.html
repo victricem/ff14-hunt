@@ -153,8 +153,9 @@
           return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
         };
 
-		const formatStatusObj = (endTime, currentTime, isMidnight) => {
-          // 1. 如果沒有時間紀錄
+		// 修改函數簽名，多收一個 rank 參數
+        const formatStatusObj = (endTime, currentTime, isMidnight, rank = 's') => {
+          // 1. 基本檢查：如果沒有時間或時間未到
           if (!endTime) {
              return { 
                label: '準備就緒', 
@@ -162,14 +163,13 @@
              };
           }
 
-          // 計算時間差 (毫秒)
           const diff = endTime - currentTime;
 
-          // ==========================================
-          // 情況 A：還在冷卻中 (diff > 0)
-          // 顯示：冷卻中 X天 X小時
-          // ==========================================
+          // ====================================================
+          // 🔵 狀態一：還在冷卻中 (倒數計時)
+          // ====================================================
           if (diff > 0) {
+              // A怪通常只需要看小時，S怪才需要看天數
               const d = Math.floor(diff / (1000 * 60 * 60 * 24));
               const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
               const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -179,9 +179,14 @@
               const mm = m.toString().padStart(2, '0');
               const ss = s.toString().padStart(2, '0');
 
-              let timeStr = d > 0 
-                  ? `${d}天 ${hh}小時 ${mm}分 ${ss}秒`
-                  : `${hh}小時 ${mm}分 ${ss}秒`;
+              let timeStr = "";
+              if (rank.toLowerCase() === 'a' && d === 0) {
+                  // A怪：只顯示 時:分:秒 (比較簡潔)
+                  timeStr = `${hh}:${mm}:${ss}`;
+              } else {
+                  // S怪/SS怪：顯示 天 時 分 秒
+                  timeStr = d > 0 ? `${d}天 ${hh}時 ${mm}分` : `${hh}時 ${mm}分 ${ss}秒`;
+              }
 
               return { 
                 label: `冷卻中 ${timeStr}`, 
@@ -189,36 +194,44 @@
               };
           }
 
-          // ==========================================
-          // 情況 B：窗口已開放 (diff <= 0)
-          // 這裡計算的是「窗口已經開了多久」
-          // ==========================================
-          
+          // ====================================================
+          // 🟢/🟠/🔴 狀態二：窗口已開放 (根據階級區分邏輯)
+          // ====================================================
           const hoursSinceOpen = Math.abs(diff) / (1000 * 60 * 60);
 
-          // 階段 1: 剛開窗 0~24 小時 -> 綠色 (安全期)
-          if (hoursSinceOpen < 24) {
-              return {
-                  label: '🟢 窗口開放',
-                  color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black'
-              };
-          }
-          
-          // 階段 2: 開窗 24~48 小時 -> 橘色 (高機率期)
-          // 大多數 S 怪會在這個區間被觸發
-          if (hoursSinceOpen < 48) {
-              return {
-                  label: '🟠 高機率觸發',
-                  color: 'text-amber-500 font-black animate-pulse' // 橘色 + 呼吸燈
-              };
+          // --- 🦇 A 怪邏輯 (Rank A) ---
+          // A怪窗口很短，通常只有 2~4 小時的隨機浮動
+          if (rank.toLowerCase() === 'a') {
+              if (hoursSinceOpen < 1) {
+                  return { label: '🟢 重生開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
+              }
+              if (hoursSinceOpen < 5) {
+                  // A怪開窗超過1小時就算高機率了
+                  return { label: '🟠 高機率重生', color: 'text-amber-500 font-black animate-pulse' };
+              }
+              // A怪開窗超過5小時還沒死，通常是漏報或必出
+              return { label: '🔴 已重生', color: 'text-red-500 font-black animate-bounce' };
           }
 
-          // 階段 3: 開窗超過 48 小時 -> 紅色 (極限/保底期)
-          // 已經開窗兩天了還沒出，通常隨時會強制重生
-          return {
-              label: '🔴 極限強制 (必出)',
-              color: 'text-red-500 font-black animate-bounce' // 紅色 + 跳動警告
-          };
+          // --- 👑 SS 怪邏輯 (Rank SS) ---
+          // SS怪通常是 "S怪死後的前置" 或 "特殊FATE"，幾乎是即時的
+          // 如果真的有冷卻紀錄，通常代表它剛進入可觸發狀態
+          if (rank.toLowerCase() === 'ss') {
+               return { 
+                   label: '⚡ 特殊觸發就緒', 
+                   color: 'text-purple-500 font-black animate-pulse shadow-purple-500/50' 
+               };
+          }
+
+          // --- 🛡️ S 怪邏輯 (Rank S) ---
+          // 預設 S 怪邏輯 (長時間戰)
+          if (hoursSinceOpen < 24) {
+              return { label: '🟢 窗口開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
+          }
+          if (hoursSinceOpen < 48) {
+              return { label: '🟠 高機率觸發', color: 'text-amber-500 font-black animate-pulse' };
+          }
+          return { label: '🔴 強制觸發', color: 'text-red-500 font-black animate-bounce' };
         };
 
 		const getCombinedWindowText = (m, eorzeaData) => {
@@ -1087,6 +1100,7 @@
     </script>
 </body>
 </html>
+
 
 
 
