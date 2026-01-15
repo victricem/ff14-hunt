@@ -153,16 +153,27 @@
           return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
         };
 
-        const formatStatusObj = (endTime, currentTime, isMidnight) => {
+		const formatStatusObj = (endTime, currentTime, isMidnight) => {
           if (!endTime || endTime <= currentTime) {
             const past = endTime ? Math.abs(endTime - currentTime) : 0;
             const h = Math.floor(past / 3600000);
-            return { label: endTime ? `已開 ${h}h` : "窗口開放", color: isMidnight ? "text-emerald-400 font-bold" : "text-emerald-600 font-bold", isReady: true };
+            return { 
+                label: endTime ? `已開 ${h}h` : "窗口開放", 
+                color: isMidnight ? "text-emerald-400 font-bold" : "text-emerald-600 font-bold", 
+                isReady: true 
+            };
           }
           const diff = endTime - currentTime;
           const h = Math.floor(diff / 3600000);
           const m = Math.floor((diff % 3600000) / 60000);
-          return { label: `冷卻中 ${h}h ${m}m`, color: isMidnight ? "text-blue-400" : "text-blue-500", isReady: false };
+          const s = Math.floor((diff % 60000) / 1000);
+          const mm = m.toString().padStart(2, '0');
+          const ss = s.toString().padStart(2, '0');
+          return { 
+            label: `冷卻中 ${h}h ${mm}m ${ss}s`,
+            color: isMidnight ? "text-blue-400 font-mono" : "text-blue-500 font-mono", 
+            isReady: false 
+          };
         };
 
         const getCombinedWindowText = (m, eorzeaData) => {
@@ -932,3 +943,4 @@
     </script>
 </body>
 </html>
+
