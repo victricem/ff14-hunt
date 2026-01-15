@@ -739,20 +739,29 @@
             return { s: sFinal, a: aFinal };
           }, [activeTab, timers, sortByStatus, currentTime]);
 
-          const liveAlerts = useMemo(() => {
-            const res = [];
-            Object.keys(HUNT_DATA).forEach(k => {
-                if(HUNT_DATA[k].s) HUNT_DATA[k].s.forEach((m, i) => {
-                   const id = `${k}-s-${i}`;
-                   if (!timers[id]?.endTime || timers[id].endTime <= currentTime) res.push({ ...m, id, rank: 's', expKey: k });
-                });
-                if(HUNT_DATA[k].a) HUNT_DATA[k].a.forEach((m, i) => {
-                   const id = `${k}-a-${i}`;
-                   if (!timers[id]?.endTime || timers[id].endTime <= currentTime) res.push({ ...m, id, rank: 'a', expKey: k });
-                });
-            });
-            return res.slice(0, 30);
-          }, [timers, currentTime]);
+			const liveAlerts = useMemo(() => {
+			            const res = [];
+			            Object.keys(HUNT_DATA).forEach(k => {
+			                // ★★★ 新增這行過濾邏輯 ★★★
+			                // 如果目前標籤不是 'all' 且 該資料包的 key (如 'dt', 'ew') 不等於目前標籤，就跳過
+			                if (activeTab !== 'all' && activeTab !== k) return;
+			
+			                if(HUNT_DATA[k].s) HUNT_DATA[k].s.forEach((m, i) => {
+			                   const id = `${k}-s-${i}`;
+			                   // 顯示條件：沒有時間紀錄 (視為剛初始化) 或 時間已到
+			                   if (!timers[id]?.endTime || timers[id].endTime <= currentTime) {
+			                       res.push({ ...m, id, rank: 's', expKey: k });
+			                   }
+			                });
+			                if(HUNT_DATA[k].a) HUNT_DATA[k].a.forEach((m, i) => {
+			                   const id = `${k}-a-${i}`;
+			                   if (!timers[id]?.endTime || timers[id].endTime <= currentTime) {
+			                       res.push({ ...m, id, rank: 'a', expKey: k });
+			                   }
+			                });
+			            });
+			            return res.slice(0, 30);
+			          }, [timers, currentTime, activeTab]); // ★★★ 記得依賴陣列要加入 activeTab
 
           return (
             <div className={`min-h-screen ${styles.bg} p-4 pb-96 font-black transition-all duration-500`}>
@@ -779,14 +788,99 @@
                   onMouseDown={(e) => { isDragging.current = true; startX.current = e.pageX - scrollRef.current.offsetLeft; scrollLeftVal.current = scrollRef.current.scrollLeft; }}
                   onMouseMove={(e) => { if (!isDragging.current) return; e.preventDefault(); const walk = (e.pageX - scrollRef.current.offsetLeft - startX.current) * 2; scrollRef.current.scrollLeft = scrollLeftVal.current - walk; }}
                   onMouseUp={() => isDragging.current = false} onMouseLeave={() => isDragging.current = false}
-                  className="flex-1 flex gap-4 overflow-x-auto custom-scrollbar-horizontal py-5 px-6 items-center cursor-grab active:cursor-grabbing select-none font-black font-black"
+                  className="flex-1 flex gap-4 overflow-x-auto custom-scrollbar-horizontal py-6 px-6 items-center cursor-grab active:cursor-grabbing select-none"
                 >
-                  {liveAlerts.length > 0 ? liveAlerts.map(m => (
-                    <div key={m.id} onClick={() => setActiveTab(m.expKey)} className={`flex-shrink-0 flex items-center gap-3 px-5 py-2.5 rounded-2xl border-2 transition-all hover:scale-105 font-black font-black ${m.rank === 's' ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-600' : 'bg-blue-500/10 border-blue-500/40 text-blue-400'} ${m.zone.includes('全境') ? 'border-amber-400 animate-pulse font-black' : ''}`}>
-                      <div className={`w-2 h-2 rounded-full animate-ping ${m.rank === 's' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
-                      <div className="flex flex-col leading-none font-black font-black"><span className="text-[10px] font-black uppercase">[{rankMap[m.rank]}] [{selectedServer}]</span><span className="text-sm font-black font-black font-black">{m.cn}</span></div>
+                  {liveAlerts.length > 0 ? liveAlerts.map(m => {
+                    // 1. 取得與下方列表完全一致的狀態
+                    const timer = timers[m.id];
+                    const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, m.rank);
+                    const winText = getCombinedWindowText(m, eorzeaData); // S怪的天氣/時間檢測
+
+                    // 2. 判斷特殊怪 (SS 或 全境)
+                    const isSpecial = m.rank === 'ss' || m.zone.includes('全境');
+                    
+                    // 3. 根據狀態決定顏色 (解析 statusObj 的顏色 class)
+                    // 預設顏色 (灰色/準備就緒)
+                    let baseColor = 'slate'; 
+                    let dotColorClass = 'bg-slate-400';
+                    let borderColorClass = 'border-slate-300';
+                    let bgGradientClass = 'from-slate-500/5';
+
+                    // S怪特殊綠燈 (天氣/時間條件達成)
+                    const isS_Open = m.rank === 's' && winText && (winText.includes("開放剩餘") || winText === "窗口符合條件");
+
+                    if (isSpecial) {
+                        baseColor = 'purple';
+                        dotColorClass = 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)] animate-pulse';
+                        borderColorClass = 'border-purple-500';
+                        bgGradientClass = 'from-purple-500/20';
+                    } else if (isS_Open) {
+                        // S怪條件達成：亮綠色 + 閃電
+                        baseColor = 'emerald';
+                        dotColorClass = 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse';
+                        borderColorClass = 'border-emerald-500';
+                        bgGradientClass = 'from-emerald-500/20';
+                    } else if (statusObj.color.includes('text-red')) {
+                        // 紅燈 (強制/必出)
+                        baseColor = 'red';
+                        dotColorClass = 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)] animate-bounce';
+                        borderColorClass = 'border-red-500';
+                        bgGradientClass = 'from-red-500/15';
+                    } else if (statusObj.color.includes('text-amber')) {
+                        // 橘燈 (高機率)
+                        baseColor = 'amber';
+                        dotColorClass = 'bg-amber-500 animate-pulse';
+                        borderColorClass = 'border-amber-500';
+                        bgGradientClass = 'from-amber-500/15';
+                    } else if (statusObj.color.includes('text-emerald')) {
+                        // 綠燈 (普通開放)
+                        baseColor = 'emerald';
+                        dotColorClass = 'bg-emerald-500';
+                        borderColorClass = 'border-emerald-500';
+                        bgGradientClass = 'from-emerald-500/15';
+                    } else if (statusObj.color.includes('text-blue')) {
+                        // 藍燈 (冷卻中 - 雖然LiveFeed通常不顯示冷卻中，但以防萬一)
+                        baseColor = 'blue';
+                        dotColorClass = 'bg-blue-500';
+                        borderColorClass = 'border-blue-500';
+                        bgGradientClass = 'from-blue-500/10';
+                    }
+
+                    // 文字顏色適配深色模式
+                    const titleColor = isMidnight ? 'text-slate-200' : 'text-slate-800';
+                    const subTitleColor = isMidnight ? `text-${baseColor}-300` : `text-${baseColor}-600`;
+
+                    return (
+                      <div key={m.id} onClick={() => setActiveTab(m.expKey)} 
+                           className={`
+                             relative flex-shrink-0 flex flex-col justify-center px-6 py-3 rounded-r-2xl border-l-[6px] cursor-pointer transition-all duration-300 hover:-translate-y-1 min-w-[180px]
+                             ${borderColorClass}
+                             bg-gradient-to-r ${bgGradientClass} to-transparent
+                             ${isSpecial ? 'shadow-[0_0_15px_rgba(168,85,247,0.2)]' : ''}
+                           `}>
+                        
+                        {/* 上排：伺服器與階級 */}
+                        <div className={`text-[10px] font-black uppercase tracking-widest mb-1.5 opacity-80 ${subTitleColor}`}>
+                          [{selectedServer}] {isSpecial ? 'SPECIAL' : `${m.rank.toUpperCase()}-RANK`}
+                        </div>
+
+                        {/* 下排：圓點 + 怪物名稱 */}
+                        <div className="flex items-center gap-2.5">
+                          {/* 狀態圓點 (與下方列表一致) */}
+                          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColorClass}`}></div>
+                          
+                          <div className={`text-lg font-black tracking-tight leading-none ${titleColor}`}>
+                            {m.cn}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }) : (
+                    <div className="flex items-center gap-3 px-4 py-2 opacity-40 select-none">
+                       <Loader2 className="w-4 h-4 animate-spin text-slate-400"/>
+                       <span className="text-xs text-slate-500 font-bold tracking-widest uppercase">Scanning...</span>
                     </div>
-                  )) : <span className="text-sm text-slate-500 italic opacity-60 font-black font-black font-black">掃描重生信號中...</span>}
+                  )}
                 </div>
               </div>
 
@@ -1066,6 +1160,7 @@
     </script>
 </body>
 </html>
+
 
 
 
