@@ -70,13 +70,13 @@
         const SERVERS = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦'];
 
         const EXPANSIONS = [
-          { id: 'all', name: '全部版本', sub: 'ALL', color: 'bg-slate-500' },
-          { id: 'dt', name: '黃金的遺產', sub: '7.0', color: 'bg-yellow-600' },
-          { id: 'ew', name: '曉月之終途', sub: '6.0', color: 'bg-indigo-600' },
-          { id: 'shb', name: '漆黑的反叛者', sub: '5.0', color: 'bg-purple-700' },
-          { id: 'sb', name: '紅蓮之狂潮', sub: '4.0', color: 'bg-red-600' },
-          { id: 'hw', name: '蒼天的伊修加德', sub: '3.0', color: 'bg-blue-600' },
-          { id: 'arr', name: '新生艾奧傑亞', sub: '2.0', color: 'bg-emerald-600' },
+          { id: 'all', name: 'ALL 全部版本', sub: 'ALL', color: 'bg-slate-500' },
+          { id: 'dt', name: '7.0 黃金的遺產', sub: '7.0', color: 'bg-yellow-600' },
+          { id: 'ew', name: '6.0 曉月之終途', sub: '6.0', color: 'bg-indigo-600' },
+          { id: 'shb', name: '5.0 漆黑的反叛者', sub: '5.0', color: 'bg-purple-700' },
+          { id: 'sb', name: '4.0 紅蓮之狂潮', sub: '4.0', color: 'bg-red-600' },
+          { id: 'hw', name: '3.0 蒼天的伊修加德', sub: '3.0', color: 'bg-blue-600' },
+          { id: 'arr', name: '2.0 新生艾奧傑亞', sub: '2.0', color: 'bg-emerald-600' },
         ];
 
         const calculateWeatherValue = (unixSeconds) => {
@@ -102,8 +102,8 @@
               if (value < 15) return '碧空'; 
               if (value < 60) return '晴朗'; 
               if (value < 75) return '陰雲';
-              if (value < 85) return '雨';
-              if (value < 95) return '暴雨';
+              if (value < 85) return '小雨';
+              if (value < 95) return '雨';
               return '靈烈';
             case '黑衣森林中央林區':
             case '中森': 
@@ -121,6 +121,12 @@
               if (value < 90) return '陰雲';
               if (value < 95) return '雨';
               return '暴雨';
+            case '西薩納蘭':
+              if (value < 40) return '碧空';
+              if (value < 60) return '晴朗';
+              if (value < 80) return '陰雲';
+              if (value < 90) return '霧';
+              return '雨';
             default:
               return '未知';
           }
@@ -131,6 +137,7 @@
           '迷津': (v) => getWeather('迷津', v),
           '黑衣森林中央林區': (v) => getWeather('黑衣森林中央林區', v),
           '東拉諾西亞': (v) => getWeather('東拉諾西亞', v),
+          '西薩納蘭': (v) => getWeather('西薩納蘭', v),
         };
 
         const formatDateTime = (ts) => {
@@ -785,3 +792,4 @@
 </body>
 
 </html>
+
