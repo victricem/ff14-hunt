@@ -154,25 +154,41 @@
         };
 
 		const formatStatusObj = (endTime, currentTime, isMidnight) => {
+          // 1. 如果沒有結束時間，或時間已到 -> 準備就緒
           if (!endTime || endTime <= currentTime) {
-            const past = endTime ? Math.abs(endTime - currentTime) : 0;
-            const h = Math.floor(past / 3600000);
-            return { 
-                label: endTime ? `已開 ${h}h` : "窗口開放", 
-                color: isMidnight ? "text-emerald-400 font-bold" : "text-emerald-600 font-bold", 
-                isReady: true 
-            };
+             return { 
+               label: '準備就緒', 
+               color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' 
+             };
           }
-          const diff = endTime - currentTime;
-          const h = Math.floor(diff / 3600000);
-          const m = Math.floor((diff % 3600000) / 60000);
-          const s = Math.floor((diff % 60000) / 1000);
+          
+          // 2. 計算剩餘秒數
+          const diff = Math.floor((endTime - currentTime) / 1000);
+          
+          // 3. 換算成 天/時/分/秒
+          const d = Math.floor(diff / 86400);
+          const h = Math.floor((diff % 86400) / 3600);
+          const m = Math.floor((diff % 3600) / 60);
+          const s = Math.floor(diff % 60);
+          
+          // 4. 補零 (變成 05 這種格式)
+          const hh = h.toString().padStart(2, '0');
           const mm = m.toString().padStart(2, '0');
           const ss = s.toString().padStart(2, '0');
+          
+          // 5. 組合顯示字串
+          let timeStr = "";
+          if (d > 0) {
+             // 如果超過 1 天：顯示 "1天 05小時 30分 10秒"
+             timeStr = `${d}天 ${hh}小時 ${mm}分 ${ss}秒`;
+          } else {
+             // 如果少於 1 天：顯示 "05小時 30分 10秒"
+             timeStr = `${hh}小時 ${mm}分 ${ss}秒`;
+          }
+          
           return { 
-            label: `冷卻中 ${h}h ${mm}m ${ss}s`,
-            color: isMidnight ? "text-blue-400 font-mono" : "text-blue-500 font-mono", 
-            isReady: false 
+            label: `冷卻中 ${timeStr}`, 
+            color: isMidnight ? 'text-blue-400 font-black' : 'text-blue-600 font-black' 
           };
         };
 
@@ -1042,6 +1058,7 @@
     </script>
 </body>
 </html>
+
 
 
 
