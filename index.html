@@ -153,7 +153,6 @@
           return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
         };
 
-		// 2. 狀態格式化函數 (修正了重複圓點，加入了Rank區分邏輯與圖示)
 		  const formatStatusObj = (endTime, currentTime, isMidnight, rank = 's') => {
 			if (!endTime) {
 			   return { 
@@ -163,8 +162,7 @@
 			}
 		
 			const diff = endTime - currentTime;
-		
-			// ❄️ 狀態一：還在冷卻中
+
 			if (diff > 0) {
 				const d = Math.floor(diff / (1000 * 60 * 60 * 24));
 				const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -188,25 +186,21 @@
 				};
 			}
 		
-			// 🟢/🟠/🔴 狀態二：窗口已開放
 			const hoursSinceOpen = Math.abs(diff) / (1000 * 60 * 60);
 		
-			// Rank A 邏輯
 			if (rank.toLowerCase() === 'a') {
-				if (hoursSinceOpen < 1) return { label: '🟢 窗口開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
-				if (hoursSinceOpen < 5) return { label: '🟠 高機率觸發', color: 'text-amber-500 font-black animate-pulse' };
-				return { label: '🔴 逾時/強制', color: 'text-red-500 font-black animate-bounce' };
+				if (hoursSinceOpen < 1) return { label: '🟢 重生開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
+				if (hoursSinceOpen < 5) return { label: '🟠 高機率重生', color: 'text-amber-500 font-black animate-pulse' };
+				return { label: '🔴 已重生', color: 'text-red-500 font-black animate-bounce' };
 			}
 		
-			// Rank SS 邏輯
 			if (rank.toLowerCase() === 'ss') {
 				 return { label: '⚡ 特殊觸發就緒', color: 'text-purple-500 font-black animate-pulse shadow-purple-500/50' };
 			}
 		
-			// Rank S 邏輯 (預設)
 			if (hoursSinceOpen < 24) return { label: '🟢 窗口開放', color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' };
 			if (hoursSinceOpen < 48) return { label: '🟠 高機率觸發', color: 'text-amber-500 font-black animate-pulse' };
-			return { label: '🔴 極限強制 (必出)', color: 'text-red-500 font-black animate-bounce' };
+			return { label: '🔴 強制觸發 (必出)', color: 'text-red-500 font-black animate-bounce' };
 		  };
 
 		const getCombinedWindowText = (m, eorzeaData) => {
@@ -252,7 +246,6 @@
                     }
 
                     if (isTimeValid) {
-                        // ★★★ 修正區域：倒數邏輯 ★★★
                         if (currentUnix >= exactSpawnTime && currentUnix < exactSpawnEndTime) {
                              const weatherEndsAt = checkTime + 1400;
                              
@@ -266,17 +259,13 @@
                                      if (currentETHour >= start) hoursLeft = (24 - currentETHour) + end;
                                      else hoursLeft = end - currentETHour;
                                  }
-                                 // 計算目標結束的 Unix 時間
                                  timeEndsAt = exactSpawnTime + (hoursLeft * ET_HOUR_SEC);
                              }
 
-                             // ★ 修正：只有當怪物有設定 "weather" 條件時，才受天氣結束時間限制
-                             // 如果是純時間怪 (如伽馬)，就只看時間，這樣跨天氣時段也不會被切斷
                              let finalEndsAt = timeEndsAt;
                              if (m.weather && m.weather.length > 0) {
                                  finalEndsAt = Math.min(weatherEndsAt, timeEndsAt);
                              } else {
-                                 // 如果沒有天氣限制，但也沒有時間限制 (極少見)，就預設跟著天氣區塊走
                                  if (timeEndsAt === Number.MAX_SAFE_INTEGER) {
                                      finalEndsAt = weatherEndsAt;
                                  }
@@ -825,7 +814,6 @@
                     <div className={viewMode==='card' ? "flex flex-col gap-10" : `flex flex-col border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black font-black font-black`}>
                       {currentViewData.s.map(m => {
                         const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
-                        // ★★★ 重點 1：這裡傳入了 's' 參數，啟用 S 怪的紅綠燈邏輯 ★★★
                         const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, 's'); 
                         const winText = getCombinedWindowText(m, eorzeaData);
                         const isSpecial = m.zone.includes('全境');
@@ -847,7 +835,6 @@
                                     <div className="text-xs text-slate-500 mb-6 font-black font-black font-black">{m.zone}</div>
                                     <div className="text-[12px] text-slate-500 mb-6 flex items-center gap-2 font-bold font-black font-black font-black"><Clock className="w-4 h-4" /> 上次擊殺：{formatDateTime(timer?.startTime)}</div>
                                     
-                                    {/* ★★★ 卡片模式：醒目提示按鈕 (支援「開放剩餘」動態倒數) ★★★ */}
                                     {!isKilled && winText && (
                                       <div className={`
                                         inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black border tracking-wide transition-all duration-300 mb-6
@@ -877,12 +864,10 @@
                                     <span className="text-[10px] text-blue-500 w-12 font-black font-black font-black">[{selectedServer}]</span>
                                     <div className="flex flex-col min-w-[180px] font-black font-black font-black"><span className="text-[10px] text-slate-500 uppercase tracking-tighter">{m.zone}</span><div className="flex items-baseline gap-2"><span className="text-xl font-black font-black font-black">{m.cn}</span><span className="text-xs opacity-50 font-normal">{m.jp}</span></div></div>
                                     
-                                    {/* ★★★ 重點 2：移除前面的圓點 ●，因為 statusObj.label 已經有 icon 了 ★★★ */}
                                     <div className={`text-xs ${statusObj.color} hidden sm:block font-black`}>{statusObj.label}</div>
                                     
                                     {isSpecial && <Crown className="w-5 h-5 text-amber-500 fill-current ml-4 font-black"/>}
                                     
-                                    {/* ★★★ 列表模式：醒目提示按鈕 (支援「開放剩餘」動態倒數) ★★★ */}
                                     {!isKilled && winText && (
                                       <div className={`
                                         ml-4 px-3 py-0.5 rounded-full text-[11px] font-black border tracking-wide transition-all duration-300 hidden lg:flex items-center whitespace-nowrap
@@ -908,7 +893,6 @@
                             {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={m.window} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
                             {viewMode === 'card' && (
                               <div className={`mt-8 pt-8 border-t ${isMidnight ? 'border-white/5' : 'border-slate-100'} flex justify-between items-center font-black font-black`}>
-                                {/* ★★★ 重點 3：卡片模式也移除圓點 ● ★★★ */}
                                 <div className={`text-sm tracking-widest uppercase font-black font-black font-black ${statusObj.color}`}>{statusObj.label}</div>
                                 <button onClick={()=>setShowTriggers({...showTriggers, [m.id]: !isOpen})} className={`text-[10px] px-6 py-2.5 rounded-full uppercase transition-all font-black font-black font-black ${styles.btn}`}>{isOpen?'隱藏':'查看條件'}</button>
                               </div>
@@ -926,7 +910,6 @@
                       {currentViewData.a.map(m => {
                         const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
                         
-                        // ★★★ 修正 1：加入 'a' 參數，啟用 A 怪專用邏輯 (1小時綠燈/5小時紅燈) ★★★
                         const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, 'a');
                         
                         const isEditing = editingTimeId === m.id;
@@ -974,7 +957,6 @@
                             </div>
                             {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
                             
-                            {/* ★★★ 修正 2：移除了這裡原本的 ● 符號 ★★★ */}
                             {viewMode === 'card' && <div className={`mt-6 text-[13px] font-black tracking-widest uppercase font-black ${statusObj.color}`}>{statusObj.label}</div>}
                             
                             {isOpen && viewMode === 'list' && <div className={`p-6 text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black font-black font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'} font-black`}>上次擊殺：{formatDateTime(timer?.startTime)}</div>}
@@ -1084,6 +1066,7 @@
     </script>
 </body>
 </html>
+
 
 
 
