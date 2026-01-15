@@ -154,41 +154,70 @@
         };
 
 		const formatStatusObj = (endTime, currentTime, isMidnight) => {
-          // 1. 如果沒有結束時間，或時間已到 -> 準備就緒
-          if (!endTime || endTime <= currentTime) {
+          // 1. 如果沒有時間紀錄
+          if (!endTime) {
              return { 
                label: '準備就緒', 
                color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black' 
              };
           }
+
+          // 計算時間差 (毫秒)
+          const diff = endTime - currentTime;
+
+          // ==========================================
+          // 情況 A：還在冷卻中 (diff > 0)
+          // 顯示：冷卻中 X天 X小時
+          // ==========================================
+          if (diff > 0) {
+              const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+              const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+              const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+              const hh = h.toString().padStart(2, '0');
+              const mm = m.toString().padStart(2, '0');
+              const ss = s.toString().padStart(2, '0');
+
+              let timeStr = d > 0 
+                  ? `${d}天 ${hh}小時 ${mm}分 ${ss}秒`
+                  : `${hh}小時 ${mm}分 ${ss}秒`;
+
+              return { 
+                label: `冷卻中 ${timeStr}`, 
+                color: isMidnight ? 'text-blue-400 font-black' : 'text-blue-600 font-black' 
+              };
+          }
+
+          // ==========================================
+          // 情況 B：窗口已開放 (diff <= 0)
+          // 這裡計算的是「窗口已經開了多久」
+          // ==========================================
           
-          // 2. 計算剩餘秒數
-          const diff = Math.floor((endTime - currentTime) / 1000);
-          
-          // 3. 換算成 天/時/分/秒
-          const d = Math.floor(diff / 86400);
-          const h = Math.floor((diff % 86400) / 3600);
-          const m = Math.floor((diff % 3600) / 60);
-          const s = Math.floor(diff % 60);
-          
-          // 4. 補零 (變成 05 這種格式)
-          const hh = h.toString().padStart(2, '0');
-          const mm = m.toString().padStart(2, '0');
-          const ss = s.toString().padStart(2, '0');
-          
-          // 5. 組合顯示字串
-          let timeStr = "";
-          if (d > 0) {
-             // 如果超過 1 天：顯示 "1天 05小時 30分 10秒"
-             timeStr = `${d}天 ${hh}小時 ${mm}分 ${ss}秒`;
-          } else {
-             // 如果少於 1 天：顯示 "05小時 30分 10秒"
-             timeStr = `${hh}小時 ${mm}分 ${ss}秒`;
+          const hoursSinceOpen = Math.abs(diff) / (1000 * 60 * 60);
+
+          // 階段 1: 剛開窗 0~24 小時 -> 綠色 (安全期)
+          if (hoursSinceOpen < 24) {
+              return {
+                  label: '🟢 窗口開放',
+                  color: isMidnight ? 'text-emerald-400 font-black' : 'text-emerald-600 font-black'
+              };
           }
           
-          return { 
-            label: `冷卻中 ${timeStr}`, 
-            color: isMidnight ? 'text-blue-400 font-black' : 'text-blue-600 font-black' 
+          // 階段 2: 開窗 24~48 小時 -> 橘色 (高機率期)
+          // 大多數 S 怪會在這個區間被觸發
+          if (hoursSinceOpen < 48) {
+              return {
+                  label: '🟠 高機率觸發',
+                  color: 'text-amber-500 font-black animate-pulse' // 橘色 + 呼吸燈
+              };
+          }
+
+          // 階段 3: 開窗超過 48 小時 -> 紅色 (極限/保底期)
+          // 已經開窗兩天了還沒出，通常隨時會強制重生
+          return {
+              label: '🔴 極限強制 (必出)',
+              color: 'text-red-500 font-black animate-bounce' // 紅色 + 跳動警告
           };
         };
 
@@ -1058,6 +1087,7 @@
     </script>
 </body>
 </html>
+
 
 
 
