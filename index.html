@@ -176,7 +176,7 @@
           };
         };
 
-		const getCombinedWindowText = (m, eorzeaData) => {
+        const getCombinedWindowText = (m, eorzeaData) => {
           if (!m.windowType) return null;
           const currentUnix = Date.now() / 1000;
           for (let i = 0; i < 72; i++) {
@@ -187,9 +187,11 @@
             const moonDay = moonPhase === 0 ? 32 : moonPhase; 
             const weatherVal = calculateWeatherValue(Math.floor(checkTime));
             const weatherName = getWeather(m.zone, weatherVal);
+
             const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
             const isTime = m.time ? (checkETHours >= m.time[0] && checkETHours < m.time[1]) : true; 
             const isW = m.weather ? (m.weather.includes(weatherName)) : true;
+            
             if (isMoon && isW && isTime) {
                 const waitSeconds = checkTime - currentUnix;
                 if (waitSeconds <= 0) {
@@ -197,10 +199,7 @@
                 }
                 const h = Math.floor(waitSeconds / 3600);
                 const min = Math.floor((waitSeconds % 3600) / 60);
-                const s = Math.floor(waitSeconds % 60);
-                const mm = min.toString().padStart(2, '0');
-                const ss = s.toString().padStart(2, '0');
-                return `理論：約 ${h}h ${mm}m ${ss}s`;
+                return `理論：約 ${h}h ${min}m`;
             }
           }
           return null;
@@ -944,5 +943,6 @@
     </script>
 </body>
 </html>
+
 
 
