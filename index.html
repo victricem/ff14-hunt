@@ -179,9 +179,8 @@
 		const getCombinedWindowText = (m, eorzeaData) => {
           if (!m.windowType) return null;
           const currentUnix = Date.now() / 1000;
-          const ET_HOUR_SEC = 175; // 1 ET小時 = 175秒
+          const ET_HOUR_SEC = 175; 
 
-          // 鎖定天氣時段的起始時間
           const weatherBaseTime = Math.floor(currentUnix / 1400) * 1400;
 
           for (let i = 0; i < 450; i++) {
@@ -205,7 +204,6 @@
                     const exactSpawnTime = checkTime + (h * ET_HOUR_SEC);
                     const exactSpawnEndTime = exactSpawnTime + ET_HOUR_SEC;
 
-                    // 巨大鰩特殊規則
                     if (m.cn === '巨大鰩' && moonDay === 16 && currentETHour < 12) {
                         continue; 
                     }
@@ -221,12 +219,10 @@
                     }
 
                     if (isTimeValid) {
-                        // ★★★ 修改重點：如果現在正在窗口期，計算剩餘時間 ★★★
+                        // ★★★ 修正區域：倒數邏輯 ★★★
                         if (currentUnix >= exactSpawnTime && currentUnix < exactSpawnEndTime) {
-                             // 1. 計算天氣結束時間 (本時段 8ET小時 結束)
                              const weatherEndsAt = checkTime + 1400;
                              
-                             // 2. 計算時間結束時間 (如果有限制)
                              let timeEndsAt = Number.MAX_SAFE_INTEGER;
                              if (m.time) {
                                  const [start, end] = m.time;
@@ -234,7 +230,6 @@
                                  if (start < end) {
                                      hoursLeft = end - currentETHour;
                                  } else {
-                                     // 跨日情況 (例如 17-8)
                                      if (currentETHour >= start) hoursLeft = (24 - currentETHour) + end;
                                      else hoursLeft = end - currentETHour;
                                  }
@@ -242,8 +237,18 @@
                                  timeEndsAt = exactSpawnTime + (hoursLeft * ET_HOUR_SEC);
                              }
 
-                             // 取兩者較早結束的時間
-                             const finalEndsAt = Math.min(weatherEndsAt, timeEndsAt);
+                             // ★ 修正：只有當怪物有設定 "weather" 條件時，才受天氣結束時間限制
+                             // 如果是純時間怪 (如伽馬)，就只看時間，這樣跨天氣時段也不會被切斷
+                             let finalEndsAt = timeEndsAt;
+                             if (m.weather && m.weather.length > 0) {
+                                 finalEndsAt = Math.min(weatherEndsAt, timeEndsAt);
+                             } else {
+                                 // 如果沒有天氣限制，但也沒有時間限制 (極少見)，就預設跟著天氣區塊走
+                                 if (timeEndsAt === Number.MAX_SAFE_INTEGER) {
+                                     finalEndsAt = weatherEndsAt;
+                                 }
+                             }
+
                              const secondsLeft = finalEndsAt - currentUnix;
                              
                              if (secondsLeft <= 0) return "窗口即將結束";
@@ -254,11 +259,9 @@
                              const rmm = rm.toString().padStart(2, '0');
                              const rss = rs.toString().padStart(2, '0');
                              
-                             // 回傳新的文字格式
                              return `開放剩餘：${rh}h ${rmm}m ${rss}s`;
                         }
 
-                        // 未來時間倒數 (保持不變)
                         if (exactSpawnTime > currentUnix) {
                              const waitSeconds = exactSpawnTime - currentUnix;
                              const days = Math.floor(waitSeconds / 86400);
@@ -1039,6 +1042,7 @@
     </script>
 </body>
 </html>
+
 
 
 
