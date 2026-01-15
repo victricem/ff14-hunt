@@ -176,12 +176,12 @@
           };
         };
 
-        const getCombinedWindowText = (m, eorzeaData) => {
+		const getCombinedWindowText = (m, eorzeaData) => {
           if (!m.windowType) return null;
           const currentUnix = Date.now() / 1000;
           const weatherBaseTime = Math.floor(currentUnix / 1400) * 1400;
           for (let i = 0; i < 450; i++) {
-            const checkTime = weatherBaseTime + (i * 1400);     
+            const checkTime = weatherBaseTime + (i * 1400);        
             const checkETTotal = checkTime * (1440/70); 
             const checkETHours = (checkETTotal / 3600) % 24;
             const moonPhase = (Math.floor(checkETTotal / 86400) + 1) % 32;
@@ -189,9 +189,16 @@
             const weatherVal = calculateWeatherValue(Math.floor(checkTime));
             const weatherName = getWeather(m.zone, weatherVal);
             const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
-            const isTime = m.time ? (checkETHours >= m.time[0] && checkETHours < m.time[1]) : true; 
+            let isTime = true;
+            if (m.time) {
+                const [start, end] = m.time;
+                if (start < end) {
+                    isTime = (checkETHours >= start && checkETHours < end);
+                } else {
+                    isTime = (checkETHours >= start || checkETHours < end);
+                }
+            }
             const isW = m.weather ? (m.weather.includes(weatherName)) : true;
-            
             if (isMoon && isW && isTime) {
                 const waitSeconds = checkTime - currentUnix;
                 if (waitSeconds <= 0) {
@@ -951,6 +958,7 @@
     </script>
 </body>
 </html>
+
 
 
 
