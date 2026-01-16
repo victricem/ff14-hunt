@@ -495,11 +495,24 @@
             return () => { unsubAuth(); clearInterval(itv); };
           }, []);
 
-          const logAction = async (mobId, mobName, actionType, details = "") => {
+        const logAction = async (mobId, mobName, actionType, details = "") => {
             try {
               const historyRef = collection(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, mobId, 'history');
               const displayName = isAdmin ? '領隊 (Admin)' : (hunterName || '匿名獵人');
-              await addDoc(historyRef, { mobName, action: actionType, details, timestamp: Date.now(), userLabel: displayName });
+              
+              // ★★★ 新增：取得操作者的 UID (作為封鎖依據) ★★★
+              // 如果是正式登入，記錄 user.uid；如果是管理員或匿名，給一個特殊標記
+              const recorderUid = user && !user.isAnonymous ? user.uid : (isAdmin ? 'ADMIN' : 'ANONYMOUS');
+
+              await addDoc(historyRef, { 
+                  mobName, 
+                  action: actionType, 
+                  details, 
+                  timestamp: Date.now(), 
+                  userLabel: displayName,
+                  uid: recorderUid // ★★★ 寫入 UID 到歷史紀錄
+              });
+
               const q = query(historyRef, orderBy('timestamp', 'desc'));
               const snapshot = await getDocs(q);
               if (snapshot.size > 50) {
@@ -1262,4 +1275,5 @@
     </script>
 </body>
 </html>
+
 
