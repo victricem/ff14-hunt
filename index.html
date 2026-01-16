@@ -968,12 +968,11 @@
 						  return (
 							<div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
 							  
-							  {/* 1. 點擊觸發區 (Click Trigger) */}
 							  <div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
 								   className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
 								
 								{viewMode === 'card' ? (
-								  /* --- 卡片視圖 (Card View) --- */
+								  /* --- 卡片視圖 (已修復倒數顯示) --- */
 								  <div className="flex flex-col font-black w-full text-left">
 									<div className="flex flex-col md:flex-row justify-between items-start mb-4">
 									  <div className="w-full md:pr-10">
@@ -984,12 +983,20 @@
 										<h3 className="text-3xl md:text-5xl mb-2 font-black tracking-tight leading-tight">{m.cn}</h3>
 										<p className="text-sm md:text-base opacity-40 mb-2 italic font-black">{m.jp}</p>
 										<div className="text-xs md:text-sm text-slate-500 mb-4 uppercase tracking-widest font-black">{m.zone}</div>
-										<div className={`text-base md:text-2xl font-black tracking-widest uppercase mb-4 flex items-center gap-3 ${statusObj.color}`}>
+										
+										<div className={`text-base md:text-2xl font-black tracking-widest uppercase mb-2 flex items-center gap-3 ${statusObj.color}`}>
 											{statusObj.label}
-											{!isKilled && winText && (winText.includes("開放剩餘") || winText === "窗口符合條件") && (
-												<span className="text-xs md:text-base bg-green-600 text-white px-2.5 py-0.5 rounded-full animate-pulse shadow-lg flex items-center gap-1">⚡ {winText.split('：')[1] || winText}</span>
-											)}
 										</div>
+										
+										{/* 修復點：只要有 winText 且未擊殺就顯示，不加額外過濾條件 */}
+										{!isKilled && winText && winText !== "一週內無符合條件" && (
+											<div className="mb-4">
+												<span className="text-xs md:text-base bg-green-600 text-white px-2.5 py-1 rounded-lg animate-pulse shadow-lg inline-flex items-center gap-1">
+													⚡ {winText.replace('開放剩餘：', '').replace('理論：', '')}
+												</span>
+											</div>
+										)}
+
 										<div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 font-black opacity-60">
 										  <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" /> 上次擊殺：{formatDateTime(timer?.startTime)}
 										</div>
@@ -1004,18 +1011,38 @@
 									</div>
 								  </div>
 								) : (
-								  /* --- 清單視圖 (List View) --- */
+								  /* --- 清單視圖 (已將觸發條件與倒數移出) --- */
 								  <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black text-left">
 									<div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 font-black">
 									  <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
 									  <div className="flex flex-col min-w-0 flex-1">
-										<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
+										<div className="flex items-center gap-2 mb-0.5">
+											<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
+											{/* 手機版狀態文字直接顯示在這邊 */}
+											<span className={`md:hidden text-[10px] ${statusObj.color}`}>{statusObj.label}</span>
+										</div>
 										<div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
+										
+										{/* ★修改處：直接顯示觸發條件與時間，不需要點開折疊 ★ */}
+										<div className="mt-1 flex flex-col gap-0.5">
+											{!isKilled && winText && winText !== "一週內無符合條件" && (
+												<span className="text-[11px] md:text-xs text-emerald-500 font-bold">
+													⚡ {winText}
+												</span>
+											)}
+											{m.trigger && (
+												<span className="text-[10px] md:text-[11px] opacity-60 line-clamp-2 md:line-clamp-1 leading-tight">
+													觸發：{m.trigger}
+												</span>
+											)}
+										</div>
 									  </div>
+
+									  {/* 電腦版右側大狀態 */}
 									  <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto whitespace-nowrap">
-										{!isKilled && winText && <div className="px-3 py-1 rounded-full text-xs border border-white/10 bg-white/5 opacity-60 font-black">{winText}</div>}
 										<div className={`text-sm w-36 text-right ${statusObj.color}`}>{statusObj.label}</div>
 									  </div>
+									  {/* 手機版右側燈號 (保留燈號但文字已移到上方) */}
 									  <div className="md:hidden flex items-center gap-2 shrink-0">
 										  {timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
 									  </div>
@@ -1030,33 +1057,18 @@
 								)}
 							  </div>
 
-							  {/* 2. 展開內容區塊 (Expanded Content) - 這是之前缺少的 */}
+							  {/* 展開區塊保留詳細歷史紀錄或備註，但重要的 trigger 已移到上方 */}
 							  {isOpen && viewMode === 'list' && (
 								  <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
 									  <div className="flex flex-col gap-2">
-										  <div className={`font-bold flex items-center gap-2 text-lg ${statusObj.color}`}>
-											狀態詳情：{statusObj.label}
-										  </div>
 										  <div className="flex items-center gap-2 opacity-80">
 											<Clock className="w-4 h-4" /> 
 											<span>上次擊殺時間：{formatDateTime(timer?.startTime)}</span>
 										  </div>
-										  {!isKilled && winText && (
-											<div className="flex items-center gap-2 text-emerald-500 font-bold">
-											  <Timer className="w-4 h-4" />
-											  <span>{winText}</span>
-											</div>
-										  )}
-										  {m.trigger && (
-											<div className="mt-2 pt-2 border-t border-white/10 opacity-60">
-											  <span className="font-bold">觸發條件：</span>{m.trigger}
-											</div>
-										  )}
 									  </div>
 								  </div>
 							  )}
 
-							  {/* 3. 管理員校正介面 (Calibration UI) */}
 							  {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={m.window} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
 							</div>
 						  );
@@ -1076,13 +1088,12 @@
 						  const isEditing = editingTimeId === m.id;
 						  const isSpecial = m.zone.includes('全境');
 						  const isOpen = showTriggers[m.id];
-						  const winText = getCombinedWindowText(m, eorzeaData); // A怪通常不需要這個，但保留以防萬一
+						  const winText = getCombinedWindowText(m, eorzeaData); // A怪雖然簡單，但也可以顯示狀態
 						  const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
 						  
 						  return (
 							<div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3rem] p-5 md:p-10 transition-all font-black ${!isKilled ? styles.readyGlowA : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
 							  
-							  {/* 1. 點擊觸發區 (Click Trigger) - 修正點擊反應 */}
 							  <div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
 								   className={viewMode === 'card' ? "" : `p-4 md:p-6 flex items-center justify-between transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10 font-black' : 'bg-emerald-50/5') : 'hover:bg-white/5'} cursor-pointer`}>
 								
@@ -1096,6 +1107,16 @@
 									  </div>
 									  <h4 className="text-2xl md:text-4xl mb-1 font-black tracking-tight">{m.cn}</h4>
 									  <div className={`text-base md:text-xl font-black tracking-widest uppercase mb-3 flex items-center gap-2 ${statusObj.color}`}>{statusObj.label}</div>
+									  
+									  {/* A怪卡片倒數修復：如果還是冷卻中，這裡可以顯示精確時間 */}
+									  {!isKilled && winText && winText !== "一週內無符合條件" && (
+											<div className="mb-3">
+												<span className="text-xs md:text-base bg-emerald-600 text-white px-2 py-0.5 rounded animate-pulse shadow-lg inline-flex items-center gap-1">
+													⚡ {winText.replace('開放剩餘：', '').replace('理論：', '')}
+												</span>
+											</div>
+									  )}
+
 									  <p className="text-xs md:text-base opacity-40 mb-3 italic font-black">{m.jp}</p>
 									  <div className="flex items-center gap-4 text-[10px] md:text-xs text-slate-500 mb-3 font-black opacity-60">
 										<span className="uppercase tracking-widest">{m.zone}</span>
@@ -1116,10 +1137,23 @@
 									<div className="flex items-center gap-2 md:gap-8 flex-1 min-w-0 font-black">
 									  <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
 									  <div className="flex flex-col min-w-0 flex-1">
-										<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
+										<div className="flex items-center gap-2 mb-0.5">
+											<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
+											<span className={`md:hidden text-[10px] ${statusObj.color}`}>{statusObj.label}</span>
+										</div>
 										<div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
+										
+										{/* ★ A怪清單模式：直接顯示倒數/狀態 ★ */}
+										{!isKilled && winText && winText !== "一週內無符合條件" && (
+											<div className="mt-1">
+												<span className="text-[11px] md:text-xs text-emerald-500 font-bold">
+													⚡ {winText}
+												</span>
+											</div>
+										)}
 									  </div>
-									  <div className={`text-sm font-black hidden md:block shrink-0 w-48 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
+
+									  <div className={`hidden md:block text-sm font-black shrink-0 w-48 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
 									  <div className="md:hidden flex items-center gap-2 shrink-0">
 										{timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
 									  </div>
@@ -1134,28 +1168,17 @@
 								)}
 							  </div>
 
-							  {/* 2. 展開內容區塊 (Expanded Content) - 這是之前 A 怪缺少的 */}
 							  {isOpen && viewMode === 'list' && (
 								  <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
 									  <div className="flex flex-col gap-2">
-										  <div className={`font-bold flex items-center gap-2 text-lg ${statusObj.color}`}>
-											狀態詳情：{statusObj.label}
-										  </div>
 										  <div className="flex items-center gap-2 opacity-80">
 											<Clock className="w-4 h-4" /> 
 											<span>上次擊殺時間：{formatDateTime(timer?.startTime)}</span>
 										  </div>
-										  {/* A怪通常沒有複雜天氣條件，但若有特殊觸發可顯示 */}
-										  {m.trigger && (
-											<div className="mt-2 pt-2 border-t border-white/10 opacity-60">
-											  <span className="font-bold">觸發條件：</span>{m.trigger}
-											</div>
-										  )}
 									  </div>
 								  </div>
 							  )}
 
-							  {/* 3. 管理員校正介面 */}
 							  {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
 							</div>
 						  );
