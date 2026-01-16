@@ -4,32 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FFXIV 繁中狩獵小幫手</title>
-
+	<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/victricem/ff14-hunt/main/icon.png">
     <meta name="theme-color" content="#0f172a">
-
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="狩獵助手">
-    
-    <link rel="apple-touch-icon" href="https://github.com/victricem/ff14-hunt/blob/main/icon.png">
-
+    <meta name="apple-mobile-web-app-title" content="繁中狩獵助手"> 
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/victricem/ff14-hunt/main/icon.png">
     <link rel="manifest" href='data:application/json;charset=utf-8,{
-        "name": "FFXIV 狩獵助手",
-        "short_name": "狩獵助手",
+        "name": "FFXIV 繁中狩獵助手",
+        "short_name": "繁中狩獵助手",
         "start_url": ".",
         "display": "standalone",
         "background_color": "%230f172a",
         "theme_color": "%230f172a",
         "icons": [
             {
-                "src": "https://github.com/victricem/ff14-hunt/blob/main/icon.png",
+                "src": "https://raw.githubusercontent.com/victricem/ff14-hunt/main/icon.png",
                 "sizes": "512x512",
                 "type": "image/png"
             }
         ]
     }'>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://cdn.tailwindcss.com"></script
     <script type="importmap">
     {
       "imports": {
@@ -42,23 +38,15 @@
       }
     }
     </script>
-
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <style>
         body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #0f172a; }
-        
-        /* 隱藏滾動條 */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* 自定義滾動條樣式 */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
-        /* 版本選擇器的橫向漸層遮罩 (新增) */
         .scroll-gradient-mask {
             mask-image: linear-gradient(to right, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
@@ -921,9 +909,7 @@
                 {SERVERS.map(s => <button key={s} onClick={() => {setSelectedServer(s);localStorage.setItem('ff-server',s);}} className={`flex-1 py-4 rounded-xl text-xs font-black transition-all ${selectedServer===s?'bg-blue-600 text-white shadow-xl shadow-blue-900/30':'bg-transparent text-slate-500 hover:bg-white/5 font-black'}`}>{s}</button>)}
               </div>
 
-			{/* 版本選擇器：改為橫向滾動以節省手機空間 */}
               <div className="flex flex-col gap-6 mb-12 font-black">
-                {/* 滾動容器外層：加入漸層遮罩提示還有內容 */}
                 <div className="relative scroll-gradient-mask">
                   <div className="flex flex-nowrap gap-3 overflow-x-auto pb-4 scrollbar-hide font-black px-1">
                     {EXPANSIONS.map(exp => (
@@ -943,8 +929,7 @@
                     ))}
                   </div>
                 </div>
-                
-                {/* 視圖切換與排序按鈕：維持原本佈局 */}
+
                 <div className="flex justify-end items-center gap-4">
                   <div className={`${isMidnight ? 'bg-black/40 border-white/5' : 'bg-white border-slate-200'} border-2 rounded-2xl p-1 flex gap-1 font-black`}>
                     <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-xl transition-all ${viewMode==='card'?'bg-blue-600 text-white shadow-lg':''}`}><LayoutGrid className="w-5 h-5"/></button>
@@ -978,36 +963,24 @@
                                 <div className="flex flex-col font-black w-full text-left">
                                   <div className="flex flex-col md:flex-row justify-between items-start mb-4">
                                     <div className="w-full md:pr-10">
-                                      {/* 1. 標籤 */}
                                       <div className="flex items-center flex-wrap gap-2 mb-4">
                                         <span className={`${m.expKey==='arr'?'bg-emerald-600':'bg-yellow-600'} text-white text-[10px] px-3 py-1 rounded-lg font-black`}>{m.expName}</span>
                                         {isSpecial && <span className="bg-amber-500 text-black text-[10px] px-3 py-1 rounded-lg flex items-center gap-1 shadow-md font-black uppercase"><Crown className="w-3 h-3 fill-current"/> SPECIAL</span>}
                                       </div>
-
-                                      {/* 2. 中文名稱 */}
                                       <h3 className="text-3xl md:text-5xl mb-2 font-black tracking-tight leading-tight">{m.cn}</h3>
-                                      
-                                      {/* 3. 日文名稱 */}
                                       <p className="text-sm md:text-base opacity-40 mb-2 italic font-black">{m.jp}</p>
-
-                                      {/* 4. 地區 */}
                                       <div className="text-xs md:text-sm text-slate-500 mb-4 uppercase tracking-widest font-black">{m.zone}</div>
-
-                                      {/* 5. 狀態文字 (放大) */}
                                       <div className={`text-base md:text-2xl font-black tracking-widest uppercase mb-4 flex items-center gap-3 ${statusObj.color}`}>
                                           {statusObj.label}
                                           {!isKilled && winText && (winText.includes("開放剩餘") || winText === "窗口符合條件") && (
                                               <span className="text-xs md:text-base bg-green-600 text-white px-2.5 py-0.5 rounded-full animate-pulse shadow-lg flex items-center gap-1">⚡ {winText.split('：')[1] || winText}</span>
                                           )}
                                       </div>
-
-                                      {/* 6. 擊殺時間 */}
                                       <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 font-black opacity-60">
                                         <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" /> 上次擊殺：{formatDateTime(timer?.startTime)}
                                       </div>
                                     </div>
-
-                                    {/* 🔄 按鈕區域：手機橫排(flex-row) / 網頁直排(md:flex-col) 樣式統一 */}
+									
                                     <div className="flex flex-row md:flex-col items-center gap-2 md:gap-5 mt-6 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
                                       {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><Edit3 className="w-6 h-6 md:w-8 md:h-8"/></button>}
                                       <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-6 h-6 md:w-8 md:h-8" /></button>
@@ -1017,7 +990,7 @@
                                   </div>
                                 </div>
                               ) : (
-                                /* 清單模式 (網頁不換行 / 手機圖示) */
+
                                 <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black">
                                   <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
@@ -1078,8 +1051,7 @@
                                         <span>上次擊殺：{formatDateTime(timer?.startTime)}</span>
                                     </div>
                                   </div>
-                                  
-                                  {/* 🔄 按鈕區域：手機橫排(flex-row) / 網頁直排(md:flex-col) 樣式統一 */}
+
                                   <div className="flex flex-row md:flex-col items-center gap-2 md:gap-4 mt-6 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
                                     {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all font-black ${styles.btn}`}><Edit3 className="w-5 h-5 md:w-7 md:h-7"/></button>}
                                     <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-5 h-5 md:w-7 md:h-7" /></button>
@@ -1088,7 +1060,7 @@
                                   </div>
                                 </div>
                               ) : (
-                                /* 清單模式 (同 S-Rank) */
+
                                 <div className="w-full flex items-center justify-between gap-2 font-black text-left">
                                   <div className="flex items-center gap-2 md:gap-8 flex-1 min-w-0 font-black">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
