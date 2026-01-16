@@ -977,7 +977,7 @@
 								   className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
 								
 								{viewMode === 'card' ? (
-								  /* --- 卡片視圖 (Card View) --- */
+								  /* --- 卡片視圖 (維持不變) --- */
 								  <div className="flex flex-col font-black w-full text-left">
 									<div className="flex flex-col md:flex-row justify-between items-start mb-4">
 									  <div className="w-full md:pr-10">
@@ -1028,15 +1028,13 @@
 									<div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 font-black">
 									  <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
 									  <div className="flex flex-col min-w-0 flex-1">
-										<div className="flex items-center gap-2 mb-0.5">
+										<div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-0.5">
 											<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
 											
-											{/* ★手機版狀態顯示邏輯修改★：冷卻中只顯示沙漏，否則顯示文字 */}
-											{isKilled ? (
-												<span className="md:hidden text-blue-500"><Timer className="w-3.5 h-3.5" /></span>
-											) : (
-												<span className={`md:hidden text-[10px] ${statusObj.color}`}>{statusObj.label}</span>
-											)}
+											{/* ★修改點：手機版狀態文字直接顯示 (包含冷卻時間)，取代原本的沙漏或圓點★ */}
+											<span className={`md:hidden text-[10px] font-bold ${statusObj.color}`}>
+												{statusObj.label}
+											</span>
 										</div>
 										<div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
 										
@@ -1054,15 +1052,14 @@
 										)}
 									  </div>
 
-									  {/* 電腦版維持不變 */}
+									  {/* 電腦版：右側保留大狀態顯示 */}
 									  <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto whitespace-nowrap">
 										<div className={`text-sm w-36 text-right ${statusObj.color}`}>{statusObj.label}</div>
 									  </div>
-									  {/* 手機版右側燈號 (移除重複顯示，因為左邊已經有沙漏或文字了，但圓點保留作為輔助) */}
-									  <div className="md:hidden flex items-center gap-2 shrink-0">
-										  {!isKilled && <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
-									  </div>
+									  
+									  {/* ★修改點：手機版右側圓點/沙漏已移除 (因為狀態文字已顯示在左側)★ */}
 									</div>
+									
 									<div className="flex gap-1 md:gap-3 shrink-0">
 									   {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-6 md:h-6"/></button>}
 									   <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-6 md:h-6" /></button>
@@ -1073,14 +1070,10 @@
 								)}
 							  </div>
 
-							  {/* 清單模式展開內容：這裡會顯示詳細冷卻時間 */}
+							  {/* ★修改點：展開區塊 (只顯示上次擊殺和觸發條件，不顯示重複的狀態)★ */}
 							  {isOpen && viewMode === 'list' && (
 								  <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
 									  <div className="flex flex-col gap-2">
-										  <div className={`font-bold flex items-center gap-2 text-lg ${statusObj.color}`}>
-											{/* 這裡顯示完整的狀態文字 (包含時間) */}
-											狀態詳情：{statusObj.label}
-										  </div>
 										  <div className="flex items-center gap-2 opacity-80">
 											<Clock className="w-4 h-4" /> 
 											<span>上次擊殺時間：{formatDateTime(timer?.startTime)}</span>
@@ -1125,7 +1118,7 @@
 								   className={viewMode === 'card' ? "" : `p-4 md:p-6 flex items-center justify-between transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10 font-black' : 'bg-emerald-50/5') : 'hover:bg-white/5'} cursor-pointer`}>
 								
 								{viewMode === 'card' ? (
-								  /* --- A怪 卡片視圖 --- */
+								  /* --- A怪 卡片視圖 (維持不變) --- */
 								  <div className="flex flex-col md:flex-row justify-between items-center font-black w-full text-left">
 									<div className="w-full md:pr-10">
 									  <div className="flex items-center gap-2 mb-4">
@@ -1160,7 +1153,7 @@
 									  {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all font-black ${styles.btn}`}><Edit3 className="w-5 h-5 md:w-7 md:h-7"/></button>}
 									  <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-5 h-5 md:w-7 md:h-7" /></button>
 									  <button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5 md:w-7 md:h-7" /> : <ListPlus className="w-5 h-5 md:w-7 md:h-7" />}</button>
-									  <button onClick={() => requestToggleKill(m.id, m.cn, 4)} className={`flex-[2] md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all active:scale-95 font-black ${isKilled?(isMidnight ? 'bg-blue-950/40 border-blue-500/50 text-blue-400' : 'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-emerald-600 text-white')}`}>{isKilled?<RotateCcw className="w-6 h-6 md:w-7 md:h-7"/>:<CheckCircle className="w-6 h-6 md:w-7 md:h-7"/>}</button>
+									  <button onClick={() => requestToggleKill(m.id, m.cn, 4)} className={`flex-[2] md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all active:scale-95 font-black ${isKilled?(isMidnight ? 'bg-blue-950/40 border-blue-500/50 text-blue-400' : 'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-blue-600 text-white')}`}>{isKilled?<RotateCcw className="w-6 h-6 md:w-7 md:h-7"/>:<CheckCircle className="w-6 h-6 md:w-7 md:h-7"/>}</button>
 									</div>
 								  </div>
 								) : (
@@ -1169,15 +1162,13 @@
 									<div className="flex items-center gap-2 md:gap-8 flex-1 min-w-0 font-black">
 									  <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
 									  <div className="flex flex-col min-w-0 flex-1">
-										<div className="flex items-center gap-2 mb-0.5">
+										<div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-0.5">
 											<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
 											
-											{/* ★手機版 A怪：冷卻中只顯示沙漏 ★ */}
-											{isKilled ? (
-												<span className="md:hidden text-blue-500"><Timer className="w-3.5 h-3.5" /></span>
-											) : (
-												<span className={`md:hidden text-[10px] ${statusObj.color}`}>{statusObj.label}</span>
-											)}
+											{/* ★修改點：手機版狀態文字直接顯示 (包含冷卻時間)★ */}
+											<span className={`md:hidden text-[10px] font-bold ${statusObj.color}`}>
+												{statusObj.label}
+											</span>
 										</div>
 										<div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
 										
@@ -1191,9 +1182,7 @@
 									  </div>
 
 									  <div className={`hidden md:block text-sm font-black shrink-0 w-48 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
-									  <div className="md:hidden flex items-center gap-2 shrink-0">
-										{!isKilled && <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
-									  </div>
+									  {/* ★修改點：移除右側點點★ */}
 									</div>
 									<div className="flex gap-1 md:gap-3 shrink-0">
 									  {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id)}} className={`p-1.5 md:p-2.5 rounded-lg border-2 font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-5 md:h-5"/></button>}
@@ -1205,20 +1194,18 @@
 								)}
 							  </div>
 
+							  {/* ★修改點：展開區塊 (只顯示上次擊殺和觸發條件)★ */}
 							  {isOpen && viewMode === 'list' && (
 								  <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
 									  <div className="flex flex-col gap-2">
-										  <div className={`font-bold flex items-center gap-2 text-lg ${statusObj.color}`}>
-											狀態詳情：{statusObj.label}
-										  </div>
 										  <div className="flex items-center gap-2 opacity-80">
 											<Clock className="w-4 h-4" /> 
 											<span>上次擊殺時間：{formatDateTime(timer?.startTime)}</span>
 										  </div>
-										  {/* A怪通常沒有 trigger，但保留以防萬一 */}
 										  {m.trigger && (
 											<div className="mt-2 pt-2 border-t border-white/10 opacity-60">
-											  <span className="font-bold block mb-1">觸發條件：</span>{m.trigger}
+											  <span className="font-bold block mb-1 text-blue-400">💡 觸發條件：</span>
+											  {m.trigger}
 											</div>
 										  )}
 									  </div>
