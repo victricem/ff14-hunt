@@ -950,85 +950,119 @@
 
               {loading ? <div className="py-48 text-center animate-pulse font-black"><Loader2 className="w-20 h-20 mx-auto animate-spin mb-6 text-blue-500" /><p className="font-black">Syncing Data...</p></div> : (
                 <div className={viewMode === 'card' ? "grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 font-black" : "flex flex-col gap-10 font-black"}>
-                  <section className={viewMode === 'list' ? "w-full font-black" : "font-black"}>
-                    <h2 className={`text-3xl md:text-4xl mb-6 md:mb-10 flex items-center gap-3 md:gap-5 px-6 font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}>
-                        <Shield className="w-8 h-8 md:w-12 md:h-12 text-yellow-500 font-black" /> S-Rank
-                    </h2>
-                    
-                    <div className={viewMode==='card' ? "flex flex-col gap-4 md:gap-10" : `flex flex-col border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[2rem] md:rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black`}>
-                      {currentViewData.s.map(m => {
-                        const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
-                        const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, 's'); 
-                        const winText = getCombinedWindowText(m, eorzeaData);
-                        const isSpecial = m.zone.includes('全境');
-                        const isOpen = showTriggers[m.id];
-                        const isEditing = editingTimeId === m.id;
-                        const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
-                        
-                        return (
-                          <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
-                            <div onClick={() => viewMode === 'list' && setShowTriggers({...showTriggers, [m.id]: !isOpen})} className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
-                              {viewMode === 'card' ? (
-                                <div className="flex flex-col font-black w-full text-left">
-                                  <div className="flex flex-col md:flex-row justify-between items-start mb-4">
-                                    <div className="w-full md:pr-10">
-                                      <div className="flex items-center flex-wrap gap-2 mb-4">
-                                        <span className={`${m.expKey==='arr'?'bg-emerald-600':'bg-yellow-600'} text-white text-[10px] px-3 py-1 rounded-lg font-black`}>{m.expName}</span>
-                                        {isSpecial && <span className="bg-amber-500 text-black text-[10px] px-3 py-1 rounded-lg flex items-center gap-1 shadow-md font-black uppercase"><Crown className="w-3 h-3 fill-current"/> SPECIAL</span>}
-                                      </div>
-                                      <h3 className="text-3xl md:text-5xl mb-2 font-black tracking-tight leading-tight">{m.cn}</h3>
-                                      <p className="text-sm md:text-base opacity-40 mb-2 italic font-black">{m.jp}</p>
-                                      <div className="text-xs md:text-sm text-slate-500 mb-4 uppercase tracking-widest font-black">{m.zone}</div>
-                                      <div className={`text-base md:text-2xl font-black tracking-widest uppercase mb-4 flex items-center gap-3 ${statusObj.color}`}>
-                                          {statusObj.label}
-                                          {!isKilled && winText && (winText.includes("開放剩餘") || winText === "窗口符合條件") && (
-                                              <span className="text-xs md:text-base bg-green-600 text-white px-2.5 py-0.5 rounded-full animate-pulse shadow-lg flex items-center gap-1">⚡ {winText.split('：')[1] || winText}</span>
-                                          )}
-                                      </div>
-                                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 font-black opacity-60">
-                                        <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" /> 上次擊殺：{formatDateTime(timer?.startTime)}
-                                      </div>
-                                    </div>
-									
-                                    <div className="flex flex-row md:flex-col items-center gap-2 md:gap-5 mt-6 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
-                                      {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><Edit3 className="w-6 h-6 md:w-8 md:h-8"/></button>}
-                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-6 h-6 md:w-8 md:h-8" /></button>
-                                      <button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-6 h-6 md:w-8 md:h-8" /> : <ListPlus className="w-6 h-6 md:w-8 md:h-8" />}</button>
-                                      <button onClick={() => requestToggleKill(m.id, m.cn, m.window)} className={`flex-[2] md:flex-none p-3.5 md:p-6 rounded-2xl border-2 shadow-lg justify-center flex items-center transition-all active:scale-95 hover:scale-110 font-black ${isKilled?(isMidnight?'bg-red-950/40 border-red-500/50 text-red-500':'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-emerald-600 text-white')}`}>{isKilled?<RotateCcw className="w-6 h-6 md:w-8 md:h-8 font-black"/>:<CheckCircle className="w-6 h-6 md:w-8 md:h-8"/>}</button>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
+					<section className={viewMode === 'list' ? "w-full font-black" : "font-black"}>
+					  <h2 className={`text-3xl md:text-4xl mb-6 md:mb-10 flex items-center gap-3 md:gap-5 px-6 font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}>
+						<Shield className="w-8 h-8 md:w-12 md:h-12 text-yellow-500 font-black" /> S-Rank
+					  </h2>
+					  
+					  <div className={viewMode==='card' ? "flex flex-col gap-4 md:gap-10" : `flex flex-col border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[2rem] md:rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black`}>
+						{currentViewData.s.map(m => {
+						  const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
+						  const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, 's'); 
+						  const winText = getCombinedWindowText(m, eorzeaData);
+						  const isSpecial = m.zone.includes('全境');
+						  const isOpen = showTriggers[m.id];
+						  const isEditing = editingTimeId === m.id;
+						  const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
+						  
+						  return (
+							<div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
+							  
+							  {/* 1. 點擊觸發區 (Click Trigger) */}
+							  <div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
+								   className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
+								
+								{viewMode === 'card' ? (
+								  /* --- 卡片視圖 (Card View) --- */
+								  <div className="flex flex-col font-black w-full text-left">
+									<div className="flex flex-col md:flex-row justify-between items-start mb-4">
+									  <div className="w-full md:pr-10">
+										<div className="flex items-center flex-wrap gap-2 mb-4">
+										  <span className={`${m.expKey==='arr'?'bg-emerald-600':'bg-yellow-600'} text-white text-[10px] px-3 py-1 rounded-lg font-black`}>{m.expName}</span>
+										  {isSpecial && <span className="bg-amber-500 text-black text-[10px] px-3 py-1 rounded-lg flex items-center gap-1 shadow-md font-black uppercase"><Crown className="w-3 h-3 fill-current"/> SPECIAL</span>}
+										</div>
+										<h3 className="text-3xl md:text-5xl mb-2 font-black tracking-tight leading-tight">{m.cn}</h3>
+										<p className="text-sm md:text-base opacity-40 mb-2 italic font-black">{m.jp}</p>
+										<div className="text-xs md:text-sm text-slate-500 mb-4 uppercase tracking-widest font-black">{m.zone}</div>
+										<div className={`text-base md:text-2xl font-black tracking-widest uppercase mb-4 flex items-center gap-3 ${statusObj.color}`}>
+											{statusObj.label}
+											{!isKilled && winText && (winText.includes("開放剩餘") || winText === "窗口符合條件") && (
+												<span className="text-xs md:text-base bg-green-600 text-white px-2.5 py-0.5 rounded-full animate-pulse shadow-lg flex items-center gap-1">⚡ {winText.split('：')[1] || winText}</span>
+											)}
+										</div>
+										<div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 font-black opacity-60">
+										  <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" /> 上次擊殺：{formatDateTime(timer?.startTime)}
+										</div>
+									  </div>
+									  
+									  <div className="flex flex-row md:flex-col items-center gap-2 md:gap-5 mt-6 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
+										{isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><Edit3 className="w-6 h-6 md:w-8 md:h-8"/></button>}
+										<button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-6 h-6 md:w-8 md:h-8" /></button>
+										<button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-6 h-6 md:w-8 md:h-8" /> : <ListPlus className="w-6 h-6 md:w-8 md:h-8" />}</button>
+										<button onClick={() => requestToggleKill(m.id, m.cn, m.window)} className={`flex-[2] md:flex-none p-3.5 md:p-6 rounded-2xl border-2 shadow-lg justify-center flex items-center transition-all active:scale-95 hover:scale-110 font-black ${isKilled?(isMidnight?'bg-red-950/40 border-red-500/50 text-red-500':'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-emerald-600 text-white')}`}>{isKilled?<RotateCcw className="w-6 h-6 md:w-8 md:h-8 font-black"/>:<CheckCircle className="w-6 h-6 md:w-8 md:h-8"/>}</button>
+									  </div>
+									</div>
+								  </div>
+								) : (
+								  /* --- 清單視圖 (List View) --- */
+								  <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black text-left">
+									<div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 font-black">
+									  <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
+									  <div className="flex flex-col min-w-0 flex-1">
+										<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
+										<div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
+									  </div>
+									  <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto whitespace-nowrap">
+										{!isKilled && winText && <div className="px-3 py-1 rounded-full text-xs border border-white/10 bg-white/5 opacity-60 font-black">{winText}</div>}
+										<div className={`text-sm w-36 text-right ${statusObj.color}`}>{statusObj.label}</div>
+									  </div>
+									  <div className="md:hidden flex items-center gap-2 shrink-0">
+										  {timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
+									  </div>
+									</div>
+									<div className="flex gap-1 md:gap-3 shrink-0">
+									   {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-6 md:h-6"/></button>}
+									   <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-6 md:h-6" /></button>
+									   <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-4 h-4 md:w-6 md:h-6" /> : <ListPlus className="w-4 h-4 md:w-6 md:h-6" />}</button>
+									   <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, m.window)}} className={`p-1.5 md:p-3.5 rounded-lg text-white shadow-lg ${isKilled?'bg-red-600':'bg-emerald-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-6 md:h-6"/>:<CheckCircle className="w-4 h-4 md:w-6 md:h-6"/>}</button>
+									</div>
+								  </div>
+								)}
+							  </div>
 
-                                <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black">
-                                  <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0">
-                                    <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                      <span className="text-[9px] text-slate-500 truncate">{m.zone}</span>
-                                      <div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 text-amber-500 fill-current shrink-0"/>}</div>
-                                    </div>
-                                    <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto">
-                                      {!isKilled && winText && <div className="px-3 py-1 rounded-full text-xs border border-white/10 bg-white/5 whitespace-nowrap opacity-60 font-black">{winText}</div>}
-                                      <div className={`text-sm w-36 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
-                                    </div>
-                                    <div className="md:hidden flex items-center gap-2 shrink-0">
-                                        {timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-1 md:gap-3 shrink-0">
-                                     {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-6 md:h-6"/></button>}
-                                     <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-6 md:h-6" /></button>
-                                     <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-4 h-4 md:w-6 md:h-6" /> : <ListPlus className="w-4 h-4 md:w-6 md:h-6" />}</button>
-                                     <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, m.window)}} className={`p-1.5 md:p-3.5 rounded-lg text-white shadow-lg ${isKilled?'bg-red-600':'bg-emerald-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-6 md:h-6"/>:<CheckCircle className="w-4 h-4 md:w-6 md:h-6"/>}</button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
+							  {/* 2. 展開內容區塊 (Expanded Content) - 這是之前缺少的 */}
+							  {isOpen && viewMode === 'list' && (
+								  <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
+									  <div className="flex flex-col gap-2">
+										  <div className={`font-bold flex items-center gap-2 text-lg ${statusObj.color}`}>
+											狀態詳情：{statusObj.label}
+										  </div>
+										  <div className="flex items-center gap-2 opacity-80">
+											<Clock className="w-4 h-4" /> 
+											<span>上次擊殺時間：{formatDateTime(timer?.startTime)}</span>
+										  </div>
+										  {!isKilled && winText && (
+											<div className="flex items-center gap-2 text-emerald-500 font-bold">
+											  <Timer className="w-4 h-4" />
+											  <span>{winText}</span>
+											</div>
+										  )}
+										  {m.trigger && (
+											<div className="mt-2 pt-2 border-t border-white/10 opacity-60">
+											  <span className="font-bold">觸發條件：</span>{m.trigger}
+											</div>
+										  )}
+									  </div>
+								  </div>
+							  )}
+
+							  {/* 3. 管理員校正介面 (Calibration UI) */}
+							  {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={m.window} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
+							</div>
+						  );
+						})}
+					  </div>
+					</section>
 
                   <section>
                     <h2 className={`text-3xl md:text-4xl mb-6 md:mb-10 flex items-center gap-3 md:gap-5 px-6 font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}>
