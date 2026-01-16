@@ -888,10 +888,30 @@
                 {SERVERS.map(s => <button key={s} onClick={() => {setSelectedServer(s);localStorage.setItem('ff-server',s);}} className={`flex-1 py-4 rounded-xl text-xs font-black transition-all ${selectedServer===s?'bg-blue-600 text-white shadow-xl shadow-blue-900/30':'bg-transparent text-slate-500 hover:bg-white/5 font-black'}`}>{s}</button>)}
               </div>
 
+			{/* 版本選擇器：改為橫向滾動以節省手機空間 */}
               <div className="flex flex-col gap-6 mb-12 font-black">
-                <div className="flex flex-wrap gap-3 overflow-x-auto pb-4 scrollbar-hide font-black">
-                  {EXPANSIONS.map(exp => <button key={exp.id} onClick={() => setActiveTab(exp.id)} className={`px-7 py-4 rounded-3xl text-xs font-black transition-all border-2 ${activeTab === exp.id ? `${exp.color} border-transparent text-white shadow-xl scale-105` : `${isMidnight ? 'bg-white/5 border-white/5 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`}`}>{exp.name}</button>)}
+                {/* 滾動容器外層：加入漸層遮罩提示還有內容 */}
+                <div className="relative scroll-gradient-mask">
+                  <div className="flex flex-nowrap gap-3 overflow-x-auto pb-4 scrollbar-hide font-black px-1">
+                    {EXPANSIONS.map(exp => (
+                      <button 
+                        key={exp.id} 
+                        onClick={() => setActiveTab(exp.id)} 
+                        className={`
+                          flex-shrink-0 px-7 py-4 rounded-3xl text-xs font-black transition-all border-2 whitespace-nowrap
+                          ${activeTab === exp.id 
+                            ? `${exp.color} border-transparent text-white shadow-xl scale-105` 
+                            : `${isMidnight ? 'bg-white/5 border-white/5 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`
+                          }
+                        `}
+                      >
+                        {exp.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                
+                {/* 視圖切換與排序按鈕：維持原本佈局 */}
                 <div className="flex justify-end items-center gap-4">
                   <div className={`${isMidnight ? 'bg-black/40 border-white/5' : 'bg-white border-slate-200'} border-2 rounded-2xl p-1 flex gap-1 font-black`}>
                     <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-xl transition-all ${viewMode==='card'?'bg-blue-600 text-white shadow-lg':''}`}><LayoutGrid className="w-5 h-5"/></button>
