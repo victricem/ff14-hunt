@@ -85,7 +85,7 @@
         import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, query, orderBy, limit, getDocs, deleteDoc } from 'firebase/firestore';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, query, orderBy, limit, getDocs, deleteDoc } from 'firebase/firestore';
 
         const firebaseConfig = {
           apiKey: "AIzaSyAfHofjsLtR0L9xrbv4rbKRTDYfieQBOUc",
@@ -432,8 +432,13 @@
           const [selectedServer, setSelectedServer] = useState(() => localStorage.getItem('ff-server') || '伊弗利特');
           const [sortByStatus, setSortByStatus] = useState(true);
           const [theme, setTheme] = useState(() => localStorage.getItem('ff-theme') || 'sunlight');
+          
+          // User & Hunter Name States
           const [user, setUser] = useState(null);
-          const [hunterName, setHunterName] = useState(() => localStorage.getItem('ff_hunter_name') || ''); 
+          const [hunterName, setHunterName] = useState(''); 
+          const [tempName, setTempName] = useState('');
+          const [isEditingName, setIsEditingName] = useState(false);
+
           const [timers, setTimers] = useState({});
           const [loading, setLoading] = useState(true);
           const [currentTime, setCurrentTime] = useState(Date.now());
@@ -466,6 +471,31 @@
             readyGlowA: isMidnight ? 'border-blue-500/40 shadow-[0_0_25px_rgba(59,130,246,0.25)] ring-2 ring-blue-500/20' : 'border-blue-500/50 bg-blue-50/5'
           };
 
+          useEffect(() => {
+            const unsubAuth = onAuthStateChanged(auth, async (u) => {
+               if (u) {
+                  setUser(u);
+                  if (!u.isAnonymous) {
+                      try {
+                          const userRef = doc(db, 'users', u.uid);
+                          const docSnap = await getDoc(userRef);
+                          if (docSnap.exists()) {
+                              const data = docSnap.data();
+                              setHunterName(data.hunterName || '');
+                              setTempName(data.hunterName || '');
+                          }
+                      } catch (e) { console.error("Profile Fetch Error", e); }
+                  }
+               } else {
+                  signInAnonymously(auth).catch((e) => console.log('Anon login', e));
+                  setHunterName('');
+                  setTempName('');
+               }
+            });
+            const itv = setInterval(() => setCurrentTime(Date.now()), 1000);
+            return () => { unsubAuth(); clearInterval(itv); };
+          }, []);
+
           const logAction = async (mobId, mobName, actionType, details = "") => {
             try {
               const historyRef = collection(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, mobId, 'history');
@@ -485,7 +515,59 @@
           };
 
           const logout = async () => {
-            try { await signOut(auth); } catch (e) {}
+            try { await signOut(auth); setHunterName(''); setIsEditingName(false); } catch (e) {}
+          };
+
+          // 2. 儲存暱稱 (雲端版 + 30天鎖定)
+          const handleSaveName = async () => {
+             if (!user || user.isAnonymous) return;
+             
+             // 如果沒變更，直接關閉
+             if (!tempName.trim() || tempName === hunterName) {
+                 setTempName(hunterName);
+                 setIsEditingName(false);
+                 return;
+             }
+
+             try {
+                 const userRef = doc(db, 'users', user.uid);
+                 const docSnap = await getDoc(userRef);
+                 const now = Date.now();
+                 
+                 // 檢查鎖定
+                 if (docSnap.exists()) {
+                     const data = docSnap.data();
+                     if (data.lockExpiry && now < data.lockExpiry) {
+                         const daysLeft = Math.ceil((data.lockExpiry - now) / (1000 * 60 * 60 * 24));
+                         alert(`⛔ 稱號已鎖定\n\n您上次修改是在 30 天內，必須等待 ${daysLeft} 天後才能再次修改稱號。`);
+                         setTempName(hunterName); 
+                         setIsEditingName(false);
+                         return;
+                     }
+                 }
+
+                 // 確認提示
+                 const confirmMsg = hunterName 
+                    ? `⚠️ 修改警告\n\n確定要將稱號改為「${tempName}」嗎？\n\n修改後將鎖定 30 天無法再次變更！`
+                    : `✅ 確認稱號\n\n確定要使用「${tempName}」作為獵人稱號嗎？\n\n設定後 30 天內無法修改！`;
+
+                 if (window.confirm(confirmMsg)) {
+                     const lockUntil = now + (30 * 24 * 60 * 60 * 1000);
+                     await setDoc(userRef, { 
+                         hunterName: tempName, 
+                         lockExpiry: lockUntil,
+                         updatedAt: now 
+                     }, { merge: true });
+                     setHunterName(tempName);
+                     setIsEditingName(false);
+                 } else {
+                     setTempName(hunterName);
+                     setIsEditingName(false);
+                 }
+             } catch (e) {
+                 alert("儲存失敗，請稍後再試。");
+                 console.error(e);
+             }
           };
 
           const eorzeaData = useMemo(() => {
@@ -500,19 +582,6 @@
             const ltToNext = (nWinStart - etHours) * ET_HOUR_IN_LT - ((Math.floor(totalETSeconds / 60) % 60) * ET_MINUTE_IN_LT);
             return { hours: etHours, day: etDay, moonLabel, curVal, nxtVal, totalSeconds: totalETSeconds, displayTime: `${etHours.toString().padStart(2, '0')}:${(Math.floor(totalETSeconds / 60) % 60).toString().padStart(2, '0')}`, nextIn: `${Math.floor(ltToNext / 60000)}m ${Math.floor((ltToNext % 60000) / 1000)}s` };
           }, [currentTime]);
-
-          useEffect(() => {
-             localStorage.setItem('ff_hunter_name', hunterName);
-          }, [hunterName]);
-
-          useEffect(() => {
-            const unsubAuth = onAuthStateChanged(auth, (u) => {
-               if (u) setUser(u);
-               else signInAnonymously(auth).catch((e) => console.log('Anon login', e));
-            });
-            const itv = setInterval(() => setCurrentTime(Date.now()), 1000);
-            return () => { unsubAuth(); clearInterval(itv); };
-          }, []);
 
           useEffect(() => {
             setLoading(true);
@@ -546,7 +615,8 @@
             }
 
             if (!isKilled && !hunterName.trim()) {
-                alert("【請設定代號】\n\n為了保護您的隱私，請在右上角輸入您的「獵人代號」後再進行操作。\n(您的 Google 帳號名稱不會被公開)");
+                alert("【請設定代號】\n\n為了保護您的隱私，請在右上角輸入您的「獵人稱號」後再進行操作。\n(您的 Google 帳號名稱不會被公開)");
+                setIsEditingName(true); // 自動幫他打開編輯框
                 return;
             }
 
@@ -652,15 +722,29 @@
                             <img src={user.photoURL} alt="Avatar" className="w-8 h-8 rounded-full border-2 border-white/20" />
                             <div className="text-right flex flex-col items-end">
                                <div className="flex items-center gap-1 text-[10px] text-slate-500 uppercase">
-                                  <User className="w-3 h-3" /> 獵人代號
+                                  <User className="w-3 h-3" /> 獵人稱號
                                </div>
-                               <input 
-                                 type="text" 
-                                 value={hunterName} 
-                                 onChange={(e) => setHunterName(e.target.value)} 
-                                 placeholder="點擊設定..."
-                                 className={`text-xs font-bold bg-transparent border-b ${isMidnight?'border-white/20 text-white placeholder-slate-600':'border-black/20 text-black placeholder-slate-400'} text-right w-24 focus:outline-none focus:border-blue-500 focus:w-32 transition-all`}
-                               />
+                               
+                               {/* 暱稱顯示/編輯切換 */}
+                               {isEditingName ? (
+                                   <input 
+                                     autoFocus
+                                     type="text" 
+                                     value={tempName} 
+                                     onChange={(e) => setTempName(e.target.value)} 
+                                     onBlur={handleSaveName}
+                                     onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                                     placeholder="輸入代號..."
+                                     className={`text-xs font-bold bg-transparent border-b-2 ${isMidnight?'border-blue-500 text-white placeholder-slate-600':'border-blue-500 text-black placeholder-slate-400'} text-right w-24 focus:outline-none`}
+                                   />
+                               ) : (
+                                   <div 
+                                     onClick={() => setIsEditingName(true)}
+                                     className={`text-xs font-bold border-b border-transparent hover:border-dashed hover:border-slate-400 cursor-pointer transition-all ${!hunterName ? 'text-blue-500 animate-pulse' : ''}`}
+                                   >
+                                     {hunterName || '點擊設定...'}
+                                   </div>
+                               )}
                             </div>
                             <button onClick={logout} className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><LogOut className="w-4 h-4"/></button>
                          </div>
@@ -1085,7 +1169,7 @@
                            <h3 className="text-[10px] md:text-[11px] font-black uppercase text-slate-500 px-2 tracking-[0.3em]">重點地圖預報</h3>
                            <div className="space-y-2 md:space-y-3">
                              {Object.keys(MAP_WEATHER_LOGIC).map(n => (
-                               <div key={n} className={`p-4 md:p-5 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-100'} border rounded-2xl md:rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.08]`}>
+                               <div key={n} className={`p-4 md:p-5 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-110'} border rounded-2xl md:rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.08]`}>
                                   <span className="text-sm md:text-base font-black">{n}</span>
                                   <div className="text-right">
                                     <div className="text-base md:text-lg text-blue-400 font-black">{MAP_WEATHER_LOGIC[n](eorzeaData.curVal)}</div>
