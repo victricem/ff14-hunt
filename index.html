@@ -696,7 +696,7 @@
             Object.keys(HUNT_DATA).forEach(k => {
                 if (activeTab !== 'all' && activeTab !== k) return;            
                 if(HUNT_DATA[k].s) HUNT_DATA[k].s.forEach((m, i) => { 
-                    const isSS = ['水晶化身之王', '克爾', '得到寬恕的叛亂', '狹縫'].includes(m.cn) || (m.trigger && m.trigger.includes('特殊'));
+                    const isSS = ['水晶化身之王', '克爾', '得到寬恕的叛亂'].includes(m.cn) || (m.trigger && m.trigger.includes('特殊'));
                     if (isSS) return;
 
                     const id = `${k}-s-${i}`; 
@@ -1267,6 +1267,7 @@
     </script>
 </body>
 </html>
+
 
 
 
