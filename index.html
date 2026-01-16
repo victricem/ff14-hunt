@@ -922,91 +922,64 @@
                           <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
                             <div onClick={() => viewMode === 'list' && setShowTriggers({...showTriggers, [m.id]: !isOpen})} className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
                               {viewMode === 'card' ? (
-                                <div className="flex flex-col font-black w-full">
+                                <div className="flex flex-col font-black w-full text-left">
                                   <div className="flex flex-col md:flex-row justify-between items-start mb-4">
                                     <div className="w-full md:pr-10">
-                                      {/* 1. 版本標籤 */}
+                                      {/* 1. 標籤 */}
                                       <div className="flex items-center flex-wrap gap-2 mb-4">
                                         <span className={`${m.expKey==='arr'?'bg-emerald-600':'bg-yellow-600'} text-white text-[10px] px-3 py-1 rounded-lg font-black`}>{m.expName}</span>
                                         {isSpecial && <span className="bg-amber-500 text-black text-[10px] px-3 py-1 rounded-lg flex items-center gap-1 shadow-md font-black uppercase"><Crown className="w-3 h-3 fill-current"/> SPECIAL</span>}
                                       </div>
 
-                                      {/* 2. 中文名稱 (網頁版變大) */}
-                                      <h3 className="text-3xl md:text-5xl mb-2 font-black tracking-tight">{m.cn}</h3>
+                                      {/* 2. 中文名稱 */}
+                                      <h3 className="text-3xl md:text-5xl mb-2 font-black tracking-tight leading-tight">{m.cn}</h3>
                                       
                                       {/* 3. 日文名稱 */}
-                                      <p className="text-sm md:text-base opacity-40 mb-3 italic font-black">{m.jp}</p>
+                                      <p className="text-sm md:text-base opacity-40 mb-2 italic font-black">{m.jp}</p>
 
-                                      {/* 4. 地圖名稱 */}
+                                      {/* 4. 地區 */}
                                       <div className="text-xs md:text-sm text-slate-500 mb-4 uppercase tracking-widest font-black">{m.zone}</div>
 
-                                      {/* 5. 狀態顯示 (網頁版顯示在名稱下方) */}
-                                      <div className={`text-base md:text-xl font-black tracking-widest uppercase mb-4 flex items-center gap-2 ${statusObj.color}`}>
+                                      {/* 5. 狀態文字 (放大) */}
+                                      <div className={`text-base md:text-2xl font-black tracking-widest uppercase mb-4 flex items-center gap-3 ${statusObj.color}`}>
                                           {statusObj.label}
+                                          {!isKilled && winText && (winText.includes("開放剩餘") || winText === "窗口符合條件") && (
+                                              <span className="text-xs md:text-base bg-green-600 text-white px-2.5 py-0.5 rounded-full animate-pulse shadow-lg flex items-center gap-1">⚡ {winText.split('：')[1] || winText}</span>
+                                          )}
                                       </div>
 
-                                      {/* 6. 上次擊殺時間 */}
-                                      <div className="flex items-center gap-2 text-xs md:text-sm text-slate-500 mb-6 font-black opacity-60">
-                                        <Clock className="w-3 h-3 md:w-4 md:h-4" /> 上次擊殺：{formatDateTime(timer?.startTime)}
+                                      {/* 6. 擊殺時間 */}
+                                      <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 font-black opacity-60">
+                                        <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" /> 上次擊殺：{formatDateTime(timer?.startTime)}
                                       </div>
-                                      
-                                      {/* S怪特殊倒數按鈕 */}
-                                      {!isKilled && winText && (
-                                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 md:px-5 md:py-2.5 rounded-full text-[10px] md:text-sm font-black border tracking-wide transition-all duration-300 mb-6 md:mb-0 ${(winText.includes("開放剩餘") || winText === "窗口符合條件") ? "bg-green-600 text-white border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`}>
-                                          {(winText.includes("開放剩餘") || winText === "窗口符合條件") ? <span className="mr-1 text-sm">⚡</span> : <Zap className="w-3 h-3 fill-current" />}
-                                          {winText}
-                                        </div>
-                                      )}
                                     </div>
 
-                                    {/* 網頁版右側按鈕群組 / 手機版底部橫排 */}
-                                    <div className="flex flex-row md:flex-col items-center gap-2 md:gap-5 mt-2 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
-                                      {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3 md:p-6 rounded-2xl border-2 transition-all hover:scale-110 font-black ${styles.btn}`}><Edit3 className="w-5 h-5 md:w-8 md:h-8"/></button>}
-                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3 md:p-6 rounded-2xl border-2 transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-5 h-5 md:w-8 md:h-8" /></button>
-                                      <button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3 md:p-6 rounded-2xl border-2 transition-all hover:scale-110 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5 md:w-8 md:h-8" /> : <ListPlus className="w-5 h-5 md:w-8 md:h-8" />}</button>
-                                      <button onClick={() => requestToggleKill(m.id, m.cn, m.window)} className={`flex-[2] md:flex-none p-3 md:p-6 rounded-2xl border-2 shadow-lg transition-all active:scale-95 hover:scale-110 font-black ${isKilled?(isMidnight?'bg-red-950/40 border-red-500/50 text-red-500':'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-emerald-600 text-white')}`}>{isKilled?<span className="md:hidden">重置</span>:<span className="md:hidden">擊殺</span>}{isKilled?<RotateCcw className="hidden md:block w-8 h-8 font-black"/>:<CheckCircle className="hidden md:block w-8 h-8"/>}</button>
+                                    {/* 🔄 按鈕區域：手機橫排(flex-row) / 網頁直排(md:flex-col) 樣式統一 */}
+                                    <div className="flex flex-row md:flex-col items-center gap-2 md:gap-5 mt-6 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
+                                      {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><Edit3 className="w-6 h-6 md:w-8 md:h-8"/></button>}
+                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-6 h-6 md:w-8 md:h-8" /></button>
+                                      <button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-6 h-6 md:w-8 md:h-8" /> : <ListPlus className="w-6 h-6 md:w-8 md:h-8" />}</button>
+                                      <button onClick={() => requestToggleKill(m.id, m.cn, m.window)} className={`flex-[2] md:flex-none p-3.5 md:p-6 rounded-2xl border-2 shadow-lg justify-center flex items-center transition-all active:scale-95 hover:scale-110 font-black ${isKilled?(isMidnight?'bg-red-950/40 border-red-500/50 text-red-500':'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-emerald-600 text-white')}`}>{isKilled?<RotateCcw className="w-6 h-6 md:w-8 md:h-8 font-black"/>:<CheckCircle className="w-6 h-6 md:w-8 md:h-8"/>}</button>
                                     </div>
                                   </div>
                                 </div>
                               ) : (
-                                /* ★★★ 修正換行的網頁版 List View ★★★ */
+                                /* 清單模式 (網頁不換行 / 手機圖示) */
                                 <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black">
-                                  <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 font-black">
+                                  <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
                                     <div className="flex flex-col min-w-0 flex-1">
-                                      <span className="text-[9px] text-slate-500 uppercase truncate">{m.zone}</span>
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-base md:text-xl font-black truncate">{m.cn}</span>
-                                        {isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}
-                                      </div>
+                                      <span className="text-[9px] text-slate-500 truncate">{m.zone}</span>
+                                      <div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 text-amber-500 fill-current shrink-0"/>}</div>
                                     </div>
-
-                                    {/* 網頁版顯示邏輯：冷卻時間(不換行) > 狀態燈號 */}
-                                    <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto font-black">
-                                      {/* 冷卻倒數：使用 whitespace-nowrap 確保不換行 */}
-                                      <div className="flex items-center gap-2 whitespace-nowrap">
-                                        {!isKilled && winText && (
-                                          <div className={`px-3 py-1 rounded-full text-xs font-black border ${winText.includes("開放剩餘") ? "bg-green-600/10 text-green-500 border-green-500/30" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`}>
-                                            {winText}
-                                          </div>
-                                        )}
-                                      </div>
-                                      {/* 狀態文字：固定寬度確保對齊 */}
-                                      <div className={`text-sm font-black w-36 text-right whitespace-nowrap ${statusObj.color}`}>
-                                        {statusObj.label}
-                                      </div>
+                                    <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto">
+                                      {!isKilled && winText && <div className="px-3 py-1 rounded-full text-xs border border-white/10 bg-white/5 whitespace-nowrap opacity-60 font-black">{winText}</div>}
+                                      <div className={`text-sm w-36 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
                                     </div>
-
-                                    {/* 手機版只顯示圖示 */}
                                     <div className="md:hidden flex items-center gap-2 shrink-0">
-                                        {timer?.endTime > currentTime ? (
-                                            <span className="text-blue-500 animate-pulse text-sm">⏳</span>
-                                        ) : (
-                                            <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>
-                                        )}
+                                        {timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
                                     </div>
                                   </div>
-
                                   <div className="flex gap-1 md:gap-3 shrink-0">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-6 md:h-6"/></button>}
                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-6 md:h-6" /></button>
@@ -1016,19 +989,6 @@
                                 </div>
                               )}
                             </div>
-                            {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={m.window} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
-                            {isOpen && viewMode === 'list' && (
-                                <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
-                                    <div className="flex flex-col gap-2">
-                                        <div className={`font-bold flex items-center gap-2 ${statusObj.color}`}>
-                                            狀態：{statusObj.label} 
-                                            {(!isKilled && winText) && <span className="ml-2 bg-white/10 px-2 py-0.5 rounded text-[10px]">({winText})</span>}
-                                        </div>
-                                        <div className="flex items-center gap-2">上次擊殺：{formatDateTime(timer?.startTime)}</div>
-                                        <div className="opacity-60 pt-2 border-t border-white/5 mt-2">{m.trigger}</div>
-                                    </div>
-                                </div>
-                            )}
                           </div>
                         );
                       })}
@@ -1053,87 +1013,50 @@
                               {viewMode === 'card' ? (
                                 <div className="flex flex-col md:flex-row justify-between items-center font-black w-full text-left">
                                   <div className="w-full md:pr-10">
-                                    {/* 1. 標籤 */}
                                     <div className="flex items-center gap-2 mb-4">
                                       <span className="bg-blue-600 text-white text-[9px] px-3 py-1 rounded-lg font-black uppercase">{m.expName}</span>
                                       {isSpecial && <span className="bg-amber-500 text-black text-[9px] px-2 py-0.5 rounded flex items-center gap-1 font-black"><Crown className="w-3 h-3 fill-current"/> SPECIAL</span>}
                                     </div>
-
-                                    {/* 2. 中文名稱 */}
-                                    <h4 className="text-2xl md:text-4xl mb-1 font-black tracking-tight leading-tight">{m.cn}</h4>
-
-                                    {/* 3. 日文名稱 */}
-                                    <p className="text-xs md:text-base opacity-40 mb-2 italic font-black">{m.jp}</p>
-
-                                    {/* 4. 地區 */}
-                                    <div className="text-[10px] md:text-xs text-slate-500 mb-6 uppercase tracking-widest font-black">{m.zone}</div>
-
-                                    {/* 5. 狀態文字 (放大) */}
-                                    <div className={`text-base md:text-2xl font-black tracking-widest uppercase mb-4 flex items-center gap-3 ${statusObj.color}`}>
-                                        {statusObj.label}
-                                    </div>
-
-                                    {/* 6. 擊殺時間 */}
-                                    <div className="text-[10px] md:text-xs text-slate-500 font-black opacity-60">
-                                        上次擊殺時間：{formatDateTime(timer?.startTime)}
+                                    <h4 className="text-2xl md:text-4xl mb-1 font-black tracking-tight">{m.cn}</h4>
+                                    <div className={`text-base md:text-xl font-black tracking-widest uppercase mb-3 flex items-center gap-2 ${statusObj.color}`}>{statusObj.label}</div>
+                                    <p className="text-xs md:text-base opacity-40 mb-3 italic font-black">{m.jp}</p>
+                                    <div className="flex items-center gap-4 text-[10px] md:text-xs text-slate-500 mb-3 font-black opacity-60">
+                                        <span className="uppercase tracking-widest">{m.zone}</span>
+                                        <span>上次擊殺：{formatDateTime(timer?.startTime)}</span>
                                     </div>
                                   </div>
                                   
-                                  {/* 按鈕區域 */}
+                                  {/* 🔄 按鈕區域：手機橫排(flex-row) / 網頁直排(md:flex-col) 樣式統一 */}
                                   <div className="flex flex-row md:flex-col items-center gap-2 md:gap-4 mt-6 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
-                                    {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3 md:p-5 rounded-xl md:rounded-2xl border-2 transition-all font-black ${styles.btn}`}><Edit3 className="w-5 h-5 md:w-7 md:h-7"/></button>}
-                                    <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3 md:p-5 rounded-xl md:rounded-2xl border-2 transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-5 h-5 md:w-7 md:h-7" /></button>
-                                    <button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3 md:p-5 rounded-xl md:rounded-2xl border-2 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5 md:w-7 md:h-7" /> : <ListPlus className="w-5 h-5 md:w-7 md:h-7" />}</button>
-                                    <button onClick={() => requestToggleKill(m.id, m.cn, 4)} className={`flex-[2] md:flex-none p-3 md:p-5 rounded-xl md:rounded-2xl border-2 transition-all active:scale-95 font-black ${isKilled?(isMidnight ? 'bg-blue-950/40 border-blue-500/50 text-blue-400' : 'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-blue-600 text-white')}`}>{isKilled?<span className="text-xs md:hidden">重置</span>:<span className="text-xs md:hidden">擊殺</span>}{isKilled?<RotateCcw className="hidden md:block w-7 h-7"/>:<CheckCircle className="hidden md:block w-7 h-7"/>}</button>
+                                    {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all font-black ${styles.btn}`}><Edit3 className="w-5 h-5 md:w-7 md:h-7"/></button>}
+                                    <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-5 h-5 md:w-7 md:h-7" /></button>
+                                    <button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5 md:w-7 md:h-7" /> : <ListPlus className="w-5 h-5 md:w-7 md:h-7" />}</button>
+                                    <button onClick={() => requestToggleKill(m.id, m.cn, 4)} className={`flex-[2] md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all active:scale-95 font-black ${isKilled?(isMidnight ? 'bg-blue-950/40 border-blue-500/50 text-blue-400' : 'bg-red-600 text-white'):(isMidnight?'bg-emerald-950/40 border-emerald-500/50 text-emerald-400':'bg-blue-600 text-white')}`}>{isKilled?<RotateCcw className="w-6 h-6 md:w-7 md:h-7"/>:<CheckCircle className="w-6 h-6 md:w-7 md:h-7"/>}</button>
                                   </div>
                                 </div>
                               ) : (
+                                /* 清單模式 (同 S-Rank) */
                                 <div className="w-full flex items-center justify-between gap-2 font-black text-left">
                                   <div className="flex items-center gap-2 md:gap-8 flex-1 min-w-0 font-black">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
-                                    <div className="flex flex-col min-w-0 flex-1 font-black">
-                                      <span className="text-[9px] text-slate-500 uppercase truncate">{m.zone}</span>
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-base md:text-xl font-black truncate">{m.cn}</span>
-                                        {isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}
-                                      </div>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                      <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
+                                      <div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
                                     </div>
-                                    
-                                    {/* 網頁版：冷卻時間(不換行) > 狀態文字 */}
-                                    <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto font-black">
-                                        <div className={`text-sm font-black w-48 text-right whitespace-nowrap ${statusObj.color}`}>
-                                            {statusObj.label}
-                                        </div>
-                                    </div>
-
-                                    {/* 手機版：圖示 */}
+                                    <div className={`text-sm font-black hidden md:block shrink-0 w-48 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
                                     <div className="md:hidden flex items-center gap-2 shrink-0">
-                                        {timer?.endTime > currentTime ? (
-                                            <span className="text-blue-500 animate-pulse text-sm">⏳</span>
-                                        ) : (
-                                            <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>
-                                        )}
+                                        {timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
                                     </div>
                                   </div>
-
-                                  <div className="flex gap-1 md:gap-3 shrink-0 font-black">
+                                  <div className="flex gap-1 md:gap-3 shrink-0">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id)}} className={`p-1.5 md:p-2.5 rounded-lg border-2 font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-5 md:h-5"/></button>}
                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-2.5 rounded-lg border-2 font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-5 md:h-5" /></button>
                                      <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-1.5 md:p-2.5 rounded-lg border-2 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <ListPlus className="w-4 h-4 md:w-5 md:h-5" />}</button>
-                                     <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, 4)}} className={`p-1.5 md:p-2.5 rounded-lg text-white ${isKilled?'bg-red-600':'bg-blue-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-4 md:h-4"/>:<CheckCircle className="w-4 h-4 md:w-4 md:h-4"/>}</button>
+                                     <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, 4)}} className={`p-1.5 md:p-2.5 rounded-lg text-white shadow-lg ${isKilled?'bg-red-600':'bg-emerald-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-4 md:h-4"/>:<CheckCircle className="w-4 h-4 md:w-4 md:h-4"/>}</button>
                                   </div>
                                 </div>
                               )}
                             </div>
-                            {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
-                            {isOpen && viewMode === 'list' && (
-                                <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
-                                    <div className="flex flex-col gap-2">
-                                        <div className={`font-bold flex items-center gap-2 ${statusObj.color}`}>狀態詳情：{statusObj.label}</div>
-                                        <div>上次擊殺時間：{formatDateTime(timer?.startTime)}</div>
-                                    </div>
-                                </div>
-                            )}
                           </div>
                         )
                       })}
@@ -1240,4 +1163,3 @@
     </script>
 </body>
 </html>
-
