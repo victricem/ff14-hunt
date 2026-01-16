@@ -969,7 +969,7 @@
                                   </div>
                                 </div>
                               ) : (
-                                /* ★★★ 優化後的 List View ★★★ */
+                                /* ★★★ 修正換行的網頁版 List View ★★★ */
                                 <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black">
                                   <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 font-black">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
@@ -981,17 +981,23 @@
                                       </div>
                                     </div>
 
-                                    {/* 網頁版清單顯示邏輯：倒數時間 > 狀態名稱 */}
-                                    <div className="hidden md:flex items-center gap-6 shrink-0 ml-auto">
-                                      {!isKilled && winText && (
-                                        <div className={`px-3 py-1 rounded-full text-xs font-black border ${winText.includes("開放剩餘") ? "bg-green-600/10 text-green-500 border-green-500/30" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`}>
-                                          {winText}
-                                        </div>
-                                      )}
-                                      <div className={`text-sm font-black w-32 text-right ${statusObj.color}`}>{statusObj.label}</div>
+                                    {/* 網頁版顯示邏輯：冷卻時間(不換行) > 狀態燈號 */}
+                                    <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto font-black">
+                                      {/* 冷卻倒數：使用 whitespace-nowrap 確保不換行 */}
+                                      <div className="flex items-center gap-2 whitespace-nowrap">
+                                        {!isKilled && winText && (
+                                          <div className={`px-3 py-1 rounded-full text-xs font-black border ${winText.includes("開放剩餘") ? "bg-green-600/10 text-green-500 border-green-500/30" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}`}>
+                                            {winText}
+                                          </div>
+                                        )}
+                                      </div>
+                                      {/* 狀態文字：固定寬度確保對齊 */}
+                                      <div className={`text-sm font-black w-36 text-right whitespace-nowrap ${statusObj.color}`}>
+                                        {statusObj.label}
+                                      </div>
                                     </div>
 
-                                    {/* 手機版清單圖示模式：⏳ 或 ● */}
+                                    {/* 手機版只顯示圖示 */}
                                     <div className="md:hidden flex items-center gap-2 shrink-0">
                                         {timer?.endTime > currentTime ? (
                                             <span className="text-blue-500 animate-pulse text-sm">⏳</span>
@@ -1005,7 +1011,7 @@
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-6 md:h-6"/></button>}
                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-6 md:h-6" /></button>
                                      <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-4 h-4 md:w-6 md:h-6" /> : <ListPlus className="w-4 h-4 md:w-6 md:h-6" />}</button>
-                                     <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, m.window)}} className={`p-1.5 md:p-3.5 rounded-lg text-white ${isKilled?'bg-red-600':'bg-emerald-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-6 md:h-6"/>:<CheckCircle className="w-4 h-4 md:w-6 md:h-6"/>}</button>
+                                     <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, m.window)}} className={`p-1.5 md:p-3.5 rounded-lg text-white shadow-lg ${isKilled?'bg-red-600':'bg-emerald-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-6 md:h-6"/>:<CheckCircle className="w-4 h-4 md:w-6 md:h-6"/>}</button>
                                   </div>
                                 </div>
                               )}
@@ -1085,22 +1091,39 @@
                                 <div className="w-full flex items-center justify-between gap-2 font-black text-left">
                                   <div className="flex items-center gap-2 md:gap-8 flex-1 min-w-0 font-black">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                      <span className="text-[9px] md:text-[10px] text-slate-500 truncate">{m.zone}</span>
-                                      <div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
+                                    <div className="flex flex-col min-w-0 flex-1 font-black">
+                                      <span className="text-[9px] text-slate-500 uppercase truncate">{m.zone}</span>
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-base md:text-xl font-black truncate">{m.cn}</span>
+                                        {isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}
+                                      </div>
                                     </div>
-                                    <div className={`text-sm font-black hidden md:block shrink-0 w-48 text-right ${statusObj.color}`}>{statusObj.label}</div>
+                                    
+                                    {/* 網頁版：冷卻時間(不換行) > 狀態文字 */}
+                                    <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto font-black">
+                                        <div className={`text-sm font-black w-48 text-right whitespace-nowrap ${statusObj.color}`}>
+                                            {statusObj.label}
+                                        </div>
+                                    </div>
+
+                                    {/* 手機版：圖示 */}
                                     <div className="md:hidden flex items-center gap-2 shrink-0">
-                                        {timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
+                                        {timer?.endTime > currentTime ? (
+                                            <span className="text-blue-500 animate-pulse text-sm">⏳</span>
+                                        ) : (
+                                            <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>
+                                        )}
                                     </div>
                                   </div>
-                                  <div className="flex gap-1 md:gap-3 shrink-0">
+
+                                  <div className="flex gap-1 md:gap-3 shrink-0 font-black">
                                      {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id)}} className={`p-1.5 md:p-2.5 rounded-lg border-2 font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-5 md:h-5"/></button>}
                                      <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-2.5 rounded-lg border-2 font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-5 md:h-5" /></button>
                                      <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-1.5 md:p-2.5 rounded-lg border-2 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <ListPlus className="w-4 h-4 md:w-5 md:h-5" />}</button>
                                      <button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, 4)}} className={`p-1.5 md:p-2.5 rounded-lg text-white ${isKilled?'bg-red-600':'bg-blue-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-4 md:h-4"/>:<CheckCircle className="w-4 h-4 md:w-4 md:h-4"/>}</button>
                                   </div>
                                 </div>
+                              )}
                               )}
                             </div>
                             {(isAdmin && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
