@@ -965,7 +965,6 @@
                         const isEditing = editingTimeId === m.id;
                         const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
                         
-                        return (
                           return (
 							  <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled ? (rank==='s'?styles.readyGlowS:styles.readyGlowA) : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
 								
@@ -1235,3 +1234,4 @@
     </script>
 </body>
 </html>
+
