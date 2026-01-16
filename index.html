@@ -835,7 +835,7 @@
                     
                     <div className={viewMode==='card' ? "flex flex-col gap-4 md:gap-10" : `flex flex-col border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[2rem] md:rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black`}>
                       {currentViewData.s.map(m => {
-                        const isSS = ['水晶化身之王', '克爾', '得到寬恕的叛亂', '狹縫'].includes(m.cn) || (m.trigger && m.trigger.includes('特殊'));
+                        const isSS = ['水晶化身之王', '克爾', '得到寬恕的叛亂'].includes(m.cn) || (m.trigger && m.trigger.includes('特殊'));
                         const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
                         let statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, 's'); 
                         if (isSS) {
@@ -1267,6 +1267,7 @@
     </script>
 </body>
 </html>
+
 
 
 
