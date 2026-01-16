@@ -8,14 +8,14 @@
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="繁中狩獵助手"> 
+    <meta name="apple-mobile-web-app-title" content="狩獵助手"> 
     
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/victricem/ff14-hunt/main/icon.png">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/victricem/ff14-hunt/main/icon.png">
 
     <link rel="manifest" href='data:application/json;charset=utf-8,{
         "name": "FFXIV 繁中狩獵助手",
-        "short_name": "繁中狩獵助手",
+        "short_name": "狩獵助手",
         "start_url": "https://victricem.github.io/ff14-hunt/",
         "display": "standalone",
         "background_color": "%230f172a",
@@ -30,7 +30,6 @@
     }'>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script async src="https://ga.jspm.io/npm:es-module-shims@1.8.0/dist/es-module-shims.js"></script>
 
     <script type="importmap">
@@ -53,11 +52,9 @@
     <style>
         body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #0f172a; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
         .scroll-gradient-mask {
             mask-image: linear-gradient(to right, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
@@ -66,32 +63,29 @@
 </head>
 <body>
     <div id="root"></div>
+
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then((reg) => console.log('PWA Service Worker 註冊成功', reg))
-            .catch((err) => console.log('PWA Service Worker 註冊失敗', err));
+            .then((reg) => console.log('SW 註冊成功', reg))
+            .catch((err) => console.log('SW 註冊失敗', err));
         });
       }
     </script>
+
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import ReactDOM from 'react-dom/client';
         import { 
           Timer, Clock, Shield, Sword, CheckCircle, RotateCcw, Loader2, 
-          ListPlus, Trash2, Share2, Lock, Unlock, Target, MapPin, Calendar, 
-          Edit3, Sun, Moon, LayoutGrid, Heart, Zap, Megaphone, AlertCircle, 
-          X, CloudSun, Crown, List, Check, FileClock 
+          ListPlus, Trash2, Share2, Target, Edit3, Sun, Moon, LayoutGrid, Megaphone, AlertCircle, 
+          X, CloudSun, Crown, List, Check, FileClock, LogIn, LogOut, User
         } from 'lucide-react';
         import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
         import { initializeApp } from 'firebase/app';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-        import { 
-          getFirestore, doc, setDoc, onSnapshot, collection, 
-          addDoc, query, orderBy, limit, 
-          getDocs, deleteDoc
-        } from 'firebase/firestore';
+        import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, query, orderBy, limit, getDocs, deleteDoc } from 'firebase/firestore';
 
         const firebaseConfig = {
           apiKey: "AIzaSyAfHofjsLtR0L9xrbv4rbKRTDYfieQBOUc",
@@ -106,14 +100,12 @@
         const fbApp = initializeApp(firebaseConfig);
         const auth = getAuth(fbApp);
         const db = getFirestore(fbApp);
+        const provider = new GoogleAuthProvider();
         
         const appIdGlobal = 'ffxiv-hunt-stable-final-v24';
-
-        const rankMap = { s: 'S', a: 'A', ss: 'SS' };
         const EORZEA_RATIO = 1440 / 70; 
         const ET_HOUR_IN_LT = 175 * 1000;            
         const ET_MINUTE_IN_LT = ET_HOUR_IN_LT / 60;   
-        const ET_DAY_IN_LT = ET_HOUR_IN_LT * 24;      
         const ADMIN_KEY_HASH = "def27bcefbd9af00d8309a531f1e6be478e741f5f49562555a81f9c53024ffa4";
         const SERVERS = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦'];
 
@@ -170,10 +162,9 @@
                 const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const s = Math.floor((diff % (1000 * 60)) / 1000);
-                const hh = h.toString().padStart(2, '0'); const mm = m.toString().padStart(2, '0'); const ss = s.toString().padStart(2, '0');
-                let timeStr = "";
-                if (rank.toLowerCase() === 'a' && d === 0) timeStr = `${hh}:${mm}:${ss}`;
-                else timeStr = d > 0 ? `${d}天 ${hh}時 ${mm}分` : `${hh}時 ${mm}分 ${ss}秒`;
+                const hh = h.toString().padStart(2, '0'); const mm = m.toString().padStart(2, '0');
+                let timeStr = d > 0 ? `${d}天 ${hh}時 ${mm}分` : `${hh}時 ${mm}分 ${s}秒`;
+                if(rank==='a' && d===0) timeStr = `${hh}:${mm}:${s}`;
                 return { label: `⏳ 冷卻中 ${timeStr}`, color: isMidnight ? 'text-blue-400 font-black' : 'text-blue-600 font-black' };
             }
             const hoursSinceOpen = Math.abs(diff) / (1000 * 60 * 60);
@@ -191,7 +182,6 @@
         const getCombinedWindowText = (m, eorzeaData) => {
             if (!m.windowType) return null;
             const currentUnix = Date.now() / 1000;
-            const ET_HOUR_SEC = 175; 
             const weatherBaseTime = Math.floor(currentUnix / 1400) * 1400;
             for (let i = 0; i < 450; i++) {
                 const checkTime = weatherBaseTime + (i * 1400); 
@@ -206,48 +196,26 @@
                 if (isW && isMoon) {
                     for (let h = 0; h < 8; h++) {
                         const currentETHour = (checkETHours + h) % 24;
-                        const exactSpawnTime = checkTime + (h * ET_HOUR_SEC);
-                        const exactSpawnEndTime = exactSpawnTime + ET_HOUR_SEC;
+                        const exactSpawnTime = checkTime + (h * 175);
+                        const exactSpawnEndTime = exactSpawnTime + 175;
                         if (m.cn === '巨大鰩' && moonDay === 16 && currentETHour < 12) continue; 
                         let isTimeValid = true;
                         if (m.time) {
                             const [start, end] = m.time;
-                            if (start < end) isTimeValid = (currentETHour >= start && currentETHour < end);
-                            else isTimeValid = (currentETHour >= start || currentETHour < end);
+                            isTimeValid = (start < end) ? (currentETHour >= start && currentETHour < end) : (currentETHour >= start || currentETHour < end);
                         }
                         if (isTimeValid) {
                             if (currentUnix >= exactSpawnTime && currentUnix < exactSpawnEndTime) {
-                                const weatherEndsAt = checkTime + 1400;
-                                let timeEndsAt = Number.MAX_SAFE_INTEGER;
-                                if (m.time) {
-                                    const [start, end] = m.time;
-                                    let hoursLeft = 0;
-                                    if (start < end) hoursLeft = end - currentETHour;
-                                    else { if (currentETHour >= start) hoursLeft = (24 - currentETHour) + end; else hoursLeft = end - currentETHour; }
-                                    timeEndsAt = exactSpawnTime + (hoursLeft * ET_HOUR_SEC);
-                                }
-                                let finalEndsAt = timeEndsAt;
-                                if (m.weather && m.weather.length > 0) finalEndsAt = Math.min(weatherEndsAt, timeEndsAt);
-                                else if (timeEndsAt === Number.MAX_SAFE_INTEGER) finalEndsAt = weatherEndsAt;
-                                const secondsLeft = finalEndsAt - currentUnix;
+                                const secondsLeft = (Math.min(checkTime + 1400, exactSpawnTime + 175)) - currentUnix;
                                 if (secondsLeft <= 0) return "窗口即將結束";
-                                const rh = Math.floor(secondsLeft / 3600);
-                                const rm = Math.floor((secondsLeft % 3600) / 60);
-                                const rs = Math.floor(secondsLeft % 60);
-                                const rmm = rm.toString().padStart(2, '0');
-                                const rss = rs.toString().padStart(2, '0');
-                                return `開放剩餘：${rh}h ${rmm}m ${rss}s`;
+                                return `開放剩餘：${Math.floor(secondsLeft / 3600)}h ${Math.floor((secondsLeft % 3600) / 60).toString().padStart(2,'0')}m`;
                             }
                             if (exactSpawnTime > currentUnix) {
                                 const waitSeconds = exactSpawnTime - currentUnix;
                                 const days = Math.floor(waitSeconds / 86400);
                                 const h = Math.floor((waitSeconds % 86400) / 3600);
-                                const min = Math.floor((waitSeconds % 3600) / 60);
-                                const s = Math.floor(waitSeconds % 60);
-                                const mm = min.toString().padStart(2, '0');
-                                const ss = s.toString().padStart(2, '0');
-                                if (days > 0) return `理論：約 ${days}天 ${h}h ${mm}m`;
-                                return `理論：約 ${h}h ${mm}m ${ss}s`;
+                                const mm = Math.floor((waitSeconds % 3600) / 60).toString().padStart(2,'0');
+                                return days > 0 ? `理論：約 ${days}天 ${h}h ${mm}m` : `理論：約 ${h}h ${mm}m`;
                             }
                         }
                     }
@@ -429,7 +397,7 @@
                         </div>
                         <div>
                           <div className="font-bold text-base flex items-center gap-2">
-                            <span className={`text-[10px] px-2 rounded border ${log.action === 'KILL' ? 'border-red-500/50 text-red-500' : log.action === 'RESET' ? 'border-emerald-500/50 text-emerald-500' : 'border-blue-500/50 text-blue-500'}`}>
+                            <span className={`text-[10px] px-2 rounded border ${log.action === 'KILL' ? 'border-red-500/50 text-red-500' : 'border-blue-500/50 text-blue-500'}`}>
                               {log.action === 'KILL' ? '擊殺' : log.action === 'RESET' ? '重置' : '手動'}
                             </span>
                           </div>
@@ -500,7 +468,8 @@
           const logAction = async (mobId, mobName, actionType, details = "") => {
             try {
               const historyRef = collection(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, mobId, 'history');
-              await addDoc(historyRef, { mobName, action: actionType, details, timestamp: Date.now(), userLabel: isAdmin ? '領隊 (Admin)' : '獵人 (Hunter)' });
+              const userName = user && !user.isAnonymous ? user.displayName : (isAdmin ? '領隊 (Admin)' : '獵人 (Hunter)');
+              await addDoc(historyRef, { mobName, action: actionType, details, timestamp: Date.now(), userLabel: userName });
               const q = query(historyRef, orderBy('timestamp', 'desc'));
               const snapshot = await getDocs(q);
               if (snapshot.size > 50) {
@@ -508,6 +477,14 @@
                 toDelete.forEach(async (docSnapshot) => await deleteDoc(docSnapshot.ref));
               }
             } catch (e) { console.error("Log error:", e); }
+          };
+
+          const loginWithGoogle = async () => {
+            try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { console.error("Login failed", e); }
+          };
+
+          const logout = async () => {
+            try { await signOut(auth); } catch (e) {}
           };
 
           const eorzeaData = useMemo(() => {
@@ -524,19 +501,19 @@
           }, [currentTime]);
 
           useEffect(() => {
-            const initAuth = async () => { try { await signInAnonymously(auth); } catch (e) {} };
-            initAuth();
-            const unsubAuth = onAuthStateChanged(auth, setUser);
+            const unsubAuth = onAuthStateChanged(auth, (u) => {
+               if (u) setUser(u);
+               else signInAnonymously(auth).catch((e) => console.log('Anon login', e));
+            });
             const itv = setInterval(() => setCurrentTime(Date.now()), 1000);
             return () => { unsubAuth(); clearInterval(itv); };
           }, []);
 
           useEffect(() => {
-            if (!user) return;
             setLoading(true);
             const colRef = collection(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`);
             return onSnapshot(colRef, (snap) => { const d = {}; snap.forEach(doc => d[doc.id] = doc.data()); setTimers(d); setLoading(false); }, (err) => setLoading(false));
-          }, [user, selectedServer]);
+          }, [selectedServer]);
 
           const verifyAdminHandler = async () => {
             const hashValue = await sha256(inputKey);
@@ -544,7 +521,7 @@
           };
 
           const handleUpdateKillTime = async (id, win) => {
-            if (!isAdmin || !user || !customTimeInput) return;
+            if (!isAdmin || !customTimeInput) return;
             try {
               const selectedTs = new Date(customTimeInput).getTime();
               if (isNaN(selectedTs)) return;
@@ -556,12 +533,24 @@
 
           const requestToggleKill = (id, cn, win) => {
             const isKilled = !!(timers[id] && timers[id].endTime > currentTime);
+            if (!isKilled) {
+               // 防惡意點擊：若要擊殺，檢查是否為正式登入
+               if (user && user.isAnonymous) {
+                  const doLogin = window.confirm("【防亂按機制】\n\n為防止惡意重置，請先登入 Google 帳號才能回報時間。\n(按下確定前往登入)");
+                  if (doLogin) loginWithGoogle();
+                  return;
+               }
+            }
+            // 如果已經擊殺，要重置(取消擊殺)，則需要管理員權限
+            if (isKilled && !isAdmin) {
+                alert("權限不足：只有領隊可以重置時間。");
+                return;
+            }
             setConfirmModal({ isOpen: true, id, name: cn, window: win, type: isKilled ? 'reset' : 'kill' });
           };
 
           const executeToggleKill = async () => {
             const { id, window, type, name } = confirmModal;
-            if (!user) return;
             const mobRef = doc(db, 'artifacts', appIdGlobal, 'public', 'data', `timers-${selectedServer}`, id);
             if (type === 'reset') { await setDoc(mobRef, {}); logAction(id, name, 'RESET', '重置了計時器'); } else { await setDoc(mobRef, { startTime: Date.now(), endTime: Date.now() + (window * 3600000), updatedAt: Date.now(), windowHours: window }, { merge: true }); logAction(id, name, 'KILL', `標記擊殺，冷卻 ${window} 小時`); }
             setConfirmModal({ ...confirmModal, isOpen: false });
@@ -579,7 +568,7 @@
             setTrainList(prev => {
               const existing = prev.find(item => item.id === mob.id && item.server === targetServer);
               if (existing) return prev.filter(item => item !== existing);
-              else return [...prev, { ...mob, server: targetServer, uniqueId: crypto.randomUUID() }];
+              else return [...prev, { ...mob, server: targetServer, uniqueId: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() }];
             });
           };
 
@@ -642,7 +631,7 @@
                      <div className="p-3 md:p-4 bg-yellow-500/10 rounded-2xl border-2 border-yellow-500/30 font-black"><Target className="w-6 h-6 md:w-10 md:h-10 text-yellow-500 font-black" /></div>
                      <div className="text-left font-black">
                         <h1 className="text-2xl md:text-4xl font-black tracking-tighter leading-none">FFXIV 繁中狩獵</h1>
-                        <p className="text-slate-500 text-[10px] md:text-xs uppercase tracking-widest font-black">Hunt Tracker v3.0</p>
+                        <p className="text-slate-500 text-[10px] md:text-xs uppercase tracking-widest font-black">Hunt Tracker v2.5</p>
                      </div>
                   </div>
                   <div className="grid grid-cols-3 md:flex gap-2 md:gap-4 font-black">
@@ -651,10 +640,31 @@
                     <button onClick={() => { const nt = isMidnight?'sunlight':'midnight'; setTheme(nt); localStorage.setItem('ff-theme', nt); }} className={`px-2 py-2 md:px-5 md:py-2.5 rounded-xl border-2 text-[10px] md:text-[11px] uppercase font-black ${styles.btn}`}>{isMidnight ? '切換日光' : '切換深夜'}</button>
                   </div>
                 </div>
-                <div className="w-full xl:w-auto grid grid-cols-1 md:flex md:flex-row gap-2 md:gap-4 font-black">
-                  <div className={`px-4 py-3 md:px-6 md:py-4 rounded-2xl border-2 flex items-center gap-3 md:gap-4 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}><Moon className="w-5 h-5 md:w-6 md:h-6 text-indigo-400 font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black">Moon</div><div className="text-lg md:text-xl font-black">{eorzeaData.moonLabel}</div></div></div>
-                  <div className={`px-4 py-3 md:px-6 md:py-4 rounded-2xl border-2 flex items-center gap-3 md:gap-4 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}><Sun className="w-5 h-5 md:w-6 md:h-6 text-yellow-500 font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black">ET</div><div className="text-xl md:text-3xl font-mono font-black">{eorzeaData.displayTime}</div></div></div>
-                  <div className={`px-4 py-3 md:px-6 md:py-4 rounded-2xl border-2 flex items-center gap-3 md:gap-4 ${isMidnight ? 'bg-blue-500/10 border-blue-500/20' : 'bg-white border-blue-500/20'}`}><Clock className="w-5 h-5 md:w-6 md:h-6 text-blue-500 font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black">LT　UTC+8</div><div className="text-xl md:text-2xl font-mono font-black">{new Date(currentTime).toLocaleTimeString([], {hour12:false})}</div></div></div>
+                <div className="w-full xl:w-auto flex flex-col md:flex-row items-end gap-4 font-black">
+                  {/* Google 登入狀態顯示 */}
+                  <div className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-3 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}>
+                     {user && !user.isAnonymous ? (
+                        <div className="flex items-center gap-3">
+                           <img src={user.photoURL} alt="Avatar" className="w-8 h-8 rounded-full border-2 border-white/20" />
+                           <div className="text-right hidden md:block">
+                              <div className="text-[10px] text-slate-500 uppercase">Login as</div>
+                              <div className="text-xs font-bold truncate max-w-[100px]">{user.displayName}</div>
+                           </div>
+                           <button onClick={logout} className="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><LogOut className="w-4 h-4"/></button>
+                        </div>
+                     ) : (
+                        <button onClick={loginWithGoogle} className="flex items-center gap-2 text-xs font-bold text-blue-500 hover:text-blue-400 transition-all">
+                           <div className="p-1.5 bg-blue-500 text-white rounded-lg"><LogIn className="w-4 h-4" /></div>
+                           <span>Google 登入</span>
+                        </button>
+                     )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:flex md:flex-row gap-2 md:gap-4 w-full md:w-auto">
+                    <div className={`px-4 py-3 md:px-6 md:py-4 rounded-2xl border-2 flex items-center gap-3 md:gap-4 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}><Moon className="w-5 h-5 md:w-6 md:h-6 text-indigo-400 font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black">Moon</div><div className="text-lg md:text-xl font-black">{eorzeaData.moonLabel}</div></div></div>
+                    <div className={`px-4 py-3 md:px-6 md:py-4 rounded-2xl border-2 flex items-center gap-3 md:gap-4 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'}`}><Sun className="w-5 h-5 md:w-6 md:h-6 text-yellow-500 font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black">ET</div><div className="text-xl md:text-3xl font-mono font-black">{eorzeaData.displayTime}</div></div></div>
+                    <div className={`px-4 py-3 md:px-6 md:py-4 rounded-2xl border-2 flex items-center gap-3 md:gap-4 ${isMidnight ? 'bg-blue-500/10 border-blue-500/20' : 'bg-white border-blue-500/20'}`}><Clock className="w-5 h-5 md:w-6 md:h-6 text-blue-500 font-black" /><div><div className="text-[10px] text-slate-500 uppercase font-black">LT</div><div className="text-xl md:text-2xl font-mono font-black">{new Date(currentTime).toLocaleTimeString([], {hour12:false})}</div></div></div>
+                  </div>
                 </div>
               </header>
 
@@ -719,18 +729,13 @@
                     
                     <div className={viewMode==='card' ? "flex flex-col gap-4 md:gap-10" : `flex flex-col border-2 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-white border-slate-200'} rounded-[2rem] md:rounded-[3.5rem] overflow-hidden divide-y divide-white/5 font-black`}>
                       {currentViewData.s.map(m => {
-                        // ★ 判斷是否為 SS 怪 (依據名稱或觸發文字)
-                        const isSS = ['水晶化身之王', '克爾', '得到寬恕的叛亂'].includes(m.cn) || (m.trigger && (m.trigger.includes('特殊S級') || m.trigger.includes('特殊SS級')));
-
+                        const isSS = ['水晶化身之王', '克爾', '得到寬恕的叛亂', '狹縫'].includes(m.cn) || (m.trigger && m.trigger.includes('特殊'));
                         const timer = timers[m.id]; const isKilled = timer?.endTime > currentTime;
-                        
-                        // ★ SS 怪狀態處理：固定顯示文字，不計算時間
                         let statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, 's'); 
                         if (isSS) {
                             statusObj = { label: '⚡ 特殊觸發 (隨機)', color: isMidnight ? 'text-purple-400 font-black' : 'text-purple-600 font-black' };
                         }
-
-                        const winText = isSS ? null : getCombinedWindowText(m, eorzeaData); // SS 怪不顯示窗口
+                        const winText = isSS ? null : getCombinedWindowText(m, eorzeaData);
                         const isSpecial = m.zone.includes('全境') || isSS;
                         const isOpen = showTriggers[m.id]; 
                         const isEditing = editingTimeId === m.id;
@@ -748,7 +753,7 @@
                                  className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
                               
                               {viewMode === 'card' ? (
-                                /* --- 卡片視圖 (Card View) --- */
+                                /* Card View */
                                 <div className="flex flex-col font-black w-full text-left">
                                   <div className="flex flex-col md:flex-row justify-between items-start mb-4">
                                     <div className="w-full md:pr-10">
@@ -787,7 +792,6 @@
                                       )}
                                     </div>
                                     
-                                    {/* ★按鈕區塊：如果是 SS 怪則完全不渲染此區塊★ */}
                                     {!isSS && (
                                       <div className="flex flex-row md:flex-col items-center gap-2 md:gap-5 mt-6 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
                                         {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><Edit3 className="w-6 h-6 md:w-8 md:h-8"/></button>}
@@ -799,15 +803,13 @@
                                   </div>
                                 </div>
                               ) : (
-                                /* --- 清單視圖 (List View) --- */
+                                /* List View */
                                 <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black text-left">
                                   <div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 font-black">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
                                     <div className="flex flex-col min-w-0 flex-1">
                                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-0.5">
                                           <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
-                                          
-                                          {/* 手機版狀態顯示 */}
                                           <span className={`md:hidden text-[10px] font-bold ${statusObj.color}`}>
                                               {statusObj.label}
                                           </span>
@@ -828,13 +830,11 @@
                                       )}
                                     </div>
 
-                                    {/* 電腦版狀態 */}
                                     <div className="hidden md:flex items-center justify-end gap-4 shrink-0 ml-auto whitespace-nowrap min-w-[240px]">
                                       <div className={`text-sm text-right ${statusObj.color}`}>{statusObj.label}</div>
                                     </div>
                                   </div>
                                   
-                                  {/* ★按鈕區塊：如果是 SS 怪則完全不渲染此區塊★ */}
                                   {!isSS && (
                                     <div className="flex gap-1 md:gap-3 shrink-0">
                                        {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-6 md:h-6"/></button>}
@@ -847,11 +847,9 @@
                               )}
                             </div>
 
-                            {/* 清單模式展開內容 */}
                             {isOpen && viewMode === 'list' && (
                                 <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
                                     <div className="flex flex-col gap-2">
-                                        {/* SS 怪不顯示上次擊殺 */}
                                         {!isSS && (
                                             <div className="flex items-center gap-2 opacity-80">
                                               <Clock className="w-4 h-4" /> 
@@ -868,7 +866,7 @@
                                 </div>
                             )}
 
-                            {(isAdmin && !isSS && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={m.window} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
+                            {(isAdmin && !isSS && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={4} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
                           </div>
                         );
                       })}
@@ -899,6 +897,7 @@
                                  className={viewMode === 'card' ? "" : `p-4 md:p-6 flex items-center justify-between transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10 font-black' : 'bg-emerald-50/5') : 'hover:bg-white/5'} cursor-pointer`}>
                               
                               {viewMode === 'card' ? (
+                                /* Card View */
                                 <div className="flex flex-col md:flex-row justify-between items-center font-black w-full text-left">
                                   <div className="w-full md:pr-10">
                                     <div className="flex items-center gap-2 mb-4">
@@ -937,6 +936,7 @@
                                   </div>
                                 </div>
                               ) : (
+                                /* List View */
                                 <div className="w-full flex items-center justify-between gap-2 font-black text-left">
                                   <div className="flex items-center gap-2 md:gap-8 flex-1 min-w-0 font-black">
                                     <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
@@ -1087,7 +1087,7 @@
                         </div>
                         <div>
                           <div className={`text-xs font-bold uppercase tracking-wider ${isMidnight ? 'text-slate-400' : 'text-slate-500'}`}>Hunt Train</div>
-                          <div className={`text-sm font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}>巡迴名單 ({trainList.length})</div>
+                          <div className={`text-sm font-black ${isMidnight ? 'text-white' : 'text-slate-900'}`}>跨服名單 ({trainList.length})</div>
                         </div>
                       </div>
                       
@@ -1161,11 +1161,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
