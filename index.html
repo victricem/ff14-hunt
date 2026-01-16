@@ -106,7 +106,6 @@
         const EORZEA_RATIO = 1440 / 70; 
         const ET_HOUR_IN_LT = 175 * 1000;            
         const ET_MINUTE_IN_LT = ET_HOUR_IN_LT / 60;   
-        const ADMIN_KEY_HASH = "def27bcefbd9af00d8309a531f1e6be478e741f5f49562555a81f9c53024ffa4";
         const SERVERS = ['伊弗利特', '迦樓羅', '利維坦', '鳳凰', '奧汀', '巴哈姆特', '泰坦'];
 
         const EXPANSIONS = [
@@ -590,8 +589,30 @@
           }, [selectedServer]);
 
           const verifyAdminHandler = async () => {
-            const hashValue = await sha256(inputKey);
-            if (hashValue === ADMIN_KEY_HASH) { setIsAdmin(true); try { localStorage.setItem('ff-is-admin', 'true'); } catch(e) {} setShowAdminModal(false); setInputKey(""); } else { alert("密碼錯誤"); }
+            if (!inputKey) return;
+            try {
+                const inputHash = await sha256(inputKey);
+                const docRef = doc(db, 'config', 'admin_settings');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const dbHash = docSnap.data().password_hash;
+                    if (inputHash === dbHash) {
+                        setIsAdmin(true);
+                        try { localStorage.setItem('ff-is-admin', 'true'); } catch(e) {}
+                        setShowAdminModal(false);
+                        setInputKey("");
+                        alert("🎉 領隊授權成功！");
+                    } else {
+                        alert("⛔ 密碼錯誤");
+                    }
+                } else {
+                    console.error("尚未在資料庫設定密碼 (config/admin_settings)");
+                    alert("系統錯誤：未設定管理員密碼庫");
+                }
+            } catch (e) {
+                console.error("驗證失敗", e);
+                alert("驗證過程發生錯誤");
+            }
           };
 
           const handleUpdateKillTime = async (id, win) => {
@@ -1297,6 +1318,7 @@
     </script>
 </body>
 </html>
+
 
 
 
