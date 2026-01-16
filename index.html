@@ -589,6 +589,10 @@
           }, [selectedServer]);
 
           const verifyAdminHandler = async () => {
+            if (!user || user.isAnonymous) {
+                alert("⛔ 權限驗證失敗\n\n請先點擊右上角登入 Google 帳號，才能進行領隊授權驗證。");
+                return;
+            }
             if (!inputKey) return;
             try {
                 const inputHash = await sha256(inputKey);
@@ -1318,6 +1322,7 @@
     </script>
 </body>
 </html>
+
 
 
 
