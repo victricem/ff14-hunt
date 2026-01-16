@@ -961,14 +961,18 @@
 						  const statusObj = formatStatusObj(timer?.endTime, currentTime, isMidnight, 's'); 
 						  const winText = getCombinedWindowText(m, eorzeaData);
 						  const isSpecial = m.zone.includes('全境');
-						  const isOpen = showTriggers[m.id]; // 共用展開狀態：清單是展開，卡片是顯示攻略
+						  // 移除 isOpen 狀態，卡片模式改為直接顯示
+						  const isOpen = showTriggers[m.id]; 
 						  const isEditing = editingTimeId === m.id;
 						  const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
 						  
-						  // 判斷時間類型標籤
+						  // 判斷是否為「窗口開放中」
+						  const isWindowOpen = winText && winText.includes("開放");
+
+						  // 卡片時間標籤
 						  let timerLabel = "";
-						  if (winText && winText.includes("開放剩餘")) timerLabel = "窗口關閉倒數";
-						  else if (winText && winText.includes("理論")) timerLabel = "預測觸發時間";
+						  if (isWindowOpen) timerLabel = "🔥 窗口關閉倒數";
+						  else if (winText && winText.includes("理論")) timerLabel = "🔮 預測觸發時間";
 
 						  return (
 							<div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
@@ -977,7 +981,7 @@
 								   className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
 								
 								{viewMode === 'card' ? (
-								  /* --- 卡片視圖 (Card View) --- */
+								  /* --- 卡片視圖 (Card View) - 直接顯示觸發條件 --- */
 								  <div className="flex flex-col font-black w-full text-left">
 									<div className="flex flex-col md:flex-row justify-between items-start mb-4">
 									  <div className="w-full md:pr-10">
@@ -994,20 +998,20 @@
 											{statusObj.label}
 										</div>
 										
-										{/* ★卡片時間顯示優化：加上標籤說明是「剩餘」還是「預測」★ */}
+										{/* 卡片時間顯示 */}
 										{!isKilled && winText && winText !== "一週內無符合條件" && (
-											<div className="mb-4 flex flex-col gap-1">
-												<span className="text-[10px] opacity-60 font-bold">{timerLabel}</span>
-												<span className={`text-sm md:text-lg font-mono font-black px-2 py-1 rounded-lg w-fit ${winText.includes("開放") ? 'bg-emerald-600 text-white animate-pulse' : 'bg-slate-200 text-slate-600'}`}>
+											<div className="mb-6 flex flex-col gap-1">
+												<span className={`text-[10px] font-bold ${isWindowOpen ? 'text-red-500 animate-pulse' : 'opacity-60'}`}>{timerLabel}</span>
+												<span className={`text-sm md:text-lg font-mono font-black px-2 py-1 rounded-lg w-fit ${isWindowOpen ? 'bg-emerald-600 text-white shadow-lg animate-pulse' : 'bg-slate-200 text-slate-600'}`}>
 													{winText.replace('開放剩餘：', '').replace('理論：', '')}
 												</span>
 											</div>
 										)}
 
-										{/* ★卡片觸發條件顯示區 (點擊按鈕後出現)★ */}
-										{isOpen && m.trigger && (
-											<div className={`mb-4 p-3 rounded-xl text-xs md:text-sm leading-relaxed border ${isMidnight ? 'bg-blue-900/20 border-blue-500/30 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
-												<span className="block font-bold mb-1 opacity-70">💡 觸發條件：</span>
+										{/* ★卡片模式：直接顯示觸發條件 (移除按鈕)★ */}
+										{m.trigger && (
+											<div className={`mb-4 p-4 rounded-2xl text-xs md:text-sm leading-relaxed border-l-4 ${isMidnight ? 'bg-blue-900/10 border-blue-500 text-slate-300' : 'bg-blue-50 border-blue-400 text-slate-600'}`}>
+												<span className="block font-bold mb-1 opacity-80 text-blue-400">💡 觸發條件：</span>
 												{m.trigger}
 											</div>
 										)}
@@ -1017,13 +1021,8 @@
 										</div>
 									  </div>
 									  
-									  {/* 按鈕區 */}
+									  {/* 按鈕區 (移除了攻略按鈕) */}
 									  <div className="flex flex-row md:flex-col items-center gap-2 md:gap-5 mt-6 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
-										{/* ★新增：攻略按鈕 (切換 isOpen)★ */}
-										<button onClick={(e) => { e.stopPropagation(); setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]})); }} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${isOpen ? 'bg-blue-500 text-white border-blue-400' : styles.btn}`}>
-											{isOpen ? <X className="w-6 h-6 md:w-8 md:h-8" /> : <List className="w-6 h-6 md:w-8 md:h-8" />}
-										</button>
-
 										{isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><Edit3 className="w-6 h-6 md:w-8 md:h-8"/></button>}
 										<button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-6 h-6 md:w-8 md:h-8" /></button>
 										<button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3.5 md:p-6 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-6 h-6 md:w-8 md:h-8" /> : <ListPlus className="w-6 h-6 md:w-8 md:h-8" />}</button>
@@ -1032,23 +1031,37 @@
 									</div>
 								  </div>
 								) : (
-								  /* --- 清單視圖 (List View) --- */
+								  /* --- 清單視圖 (List View) - 窗口狀態直覺化 --- */
 								  <div className="w-full flex items-center justify-between gap-2 md:gap-4 font-black text-left">
 									<div className="flex items-center gap-2 md:gap-6 flex-1 min-w-0 font-black">
 									  <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
 									  <div className="flex flex-col min-w-0 flex-1">
 										<div className="flex items-center gap-2 mb-0.5">
 											<span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate">{m.zone}</span>
+											{/* 手機版狀態文字直接顯示 */}
 											<span className={`md:hidden text-[10px] ${statusObj.color}`}>{statusObj.label}</span>
 										</div>
 										<div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
 										
-										{/* ★清單模式：只顯示時間，觸發條件隱藏★ */}
+										{/* ★清單模式：窗口狀態優化★ */}
 										{!isKilled && winText && winText !== "一週內無符合條件" && (
-											<div className="mt-1">
-												<span className="text-[11px] md:text-xs text-emerald-500 font-bold">
-													⚡ {winText.replace('開放剩餘：', '').replace('理論：', '')}
-												</span>
+											<div className="mt-1.5">
+												{isWindowOpen ? (
+													/* 窗口開放：醒目樣式 */
+													<div className="flex flex-col items-start gap-0.5">
+														<span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold animate-pulse shadow-md">
+															🔥 窗口開放中
+														</span>
+														<span className="text-emerald-500 text-xs font-mono font-black">
+															剩餘 {winText.replace('開放剩餘：', '')}
+														</span>
+													</div>
+												) : (
+													/* 等待中：一般樣式 */
+													<span className={`text-[11px] md:text-xs font-bold ${isMidnight ? 'text-blue-400' : 'text-slate-500'}`}>
+														🔮 {winText}
+													</span>
+												)}
 											</div>
 										)}
 									  </div>
@@ -1056,12 +1069,12 @@
 									  <div className="hidden md:flex items-center gap-8 shrink-0 ml-auto whitespace-nowrap">
 										<div className={`text-sm w-36 text-right ${statusObj.color}`}>{statusObj.label}</div>
 									  </div>
+									  {/* 手機版右側燈號 (保留，輔助辨識) */}
 									  <div className="md:hidden flex items-center gap-2 shrink-0">
 										  {timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
 									  </div>
 									</div>
 									<div className="flex gap-1 md:gap-3 shrink-0">
-									   {/* 清單模式下，點擊整行即可展開，所以這裡不需要額外的攻略按鈕 */}
 									   {isAdmin && <button onClick={(e) => {e.stopPropagation(); setEditingTimeId(isEditing ? null : m.id);}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><Edit3 className="w-4 h-4 md:w-6 md:h-6"/></button>}
 									   <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn}`}><FileClock className="w-4 h-4 md:w-6 md:h-6" /></button>
 									   <button onClick={(e) => {e.stopPropagation(); toggleTrainMob(m)}} className={`p-1.5 md:p-3.5 border-2 rounded-lg font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-4 h-4 md:w-6 md:h-6" /> : <ListPlus className="w-4 h-4 md:w-6 md:h-6" />}</button>
@@ -1071,7 +1084,7 @@
 								)}
 							  </div>
 
-							  {/* ★清單模式：觸發條件移回這裡 (點擊後展開)★ */}
+							  {/* 清單模式：點擊展開顯示觸發條件 */}
 							  {isOpen && viewMode === 'list' && (
 								  <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
 									  <div className="flex flex-col gap-2">
@@ -1084,7 +1097,8 @@
 										  </div>
 										  {m.trigger && (
 											<div className="mt-2 pt-2 border-t border-white/10 opacity-60">
-											  <span className="font-bold block mb-1">觸發條件：</span>{m.trigger}
+											  <span className="font-bold block mb-1 text-blue-400">💡 觸發條件：</span>
+											  {m.trigger}
 											</div>
 										  )}
 									  </div>
@@ -1113,10 +1127,7 @@
 						  const winText = getCombinedWindowText(m, eorzeaData);
 						  const inTrain = trainList.some(t => t.id === m.id && t.server === selectedServer);
 						  
-						  // 時間標籤
-						  let timerLabel = "";
-						  if (winText && winText.includes("開放剩餘")) timerLabel = "窗口關閉倒數";
-						  else if (winText && winText.includes("理論")) timerLabel = "預測觸發時間";
+						  const isWindowOpen = winText && winText.includes("開放");
 
 						  return (
 							<div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3rem] p-5 md:p-10 transition-all font-black ${!isKilled ? styles.readyGlowA : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
@@ -1125,7 +1136,7 @@
 								   className={viewMode === 'card' ? "" : `p-4 md:p-6 flex items-center justify-between transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10 font-black' : 'bg-emerald-50/5') : 'hover:bg-white/5'} cursor-pointer`}>
 								
 								{viewMode === 'card' ? (
-								  /* --- 卡片視圖 --- */
+								  /* --- A怪 卡片視圖 --- */
 								  <div className="flex flex-col md:flex-row justify-between items-center font-black w-full text-left">
 									<div className="w-full md:pr-10">
 									  <div className="flex items-center gap-2 mb-4">
@@ -1135,25 +1146,24 @@
 									  <h4 className="text-2xl md:text-4xl mb-1 font-black tracking-tight">{m.cn}</h4>
 									  <div className={`text-base md:text-xl font-black tracking-widest uppercase mb-3 flex items-center gap-2 ${statusObj.color}`}>{statusObj.label}</div>
 									  
-									  {/* ★卡片時間顯示優化★ */}
+									  {/* A怪 時間顯示 */}
 									  {!isKilled && winText && winText !== "一週內無符合條件" && (
-											<div className="mb-3 flex flex-col gap-1">
-												<span className="text-[10px] opacity-60 font-bold">{timerLabel}</span>
-												<span className={`text-sm md:text-lg font-mono font-black px-2 py-1 rounded-lg w-fit ${winText.includes("開放") ? 'bg-emerald-600 text-white animate-pulse' : 'bg-slate-200 text-slate-600'}`}>
-													{winText.replace('開放剩餘：', '').replace('理論：', '')}
+											<div className="mb-3">
+												<span className="text-xs md:text-base bg-emerald-600 text-white px-2 py-0.5 rounded animate-pulse shadow-lg inline-flex items-center gap-1">
+													⚡ {winText.replace('開放剩餘：', '').replace('理論：', '')}
 												</span>
 											</div>
 									  )}
 
-									  {/* ★卡片攻略顯示區★ */}
-									  {isOpen && m.trigger && (
-											<div className={`mb-3 p-3 rounded-xl text-xs md:text-sm leading-relaxed border ${isMidnight ? 'bg-blue-900/20 border-blue-500/30 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
-												<span className="block font-bold mb-1 opacity-70">💡 觸發條件：</span>
+									  <p className="text-xs md:text-base opacity-40 mb-3 italic font-black">{m.jp}</p>
+									  
+									  {/* A怪 卡片直接顯示觸發條件 (若有) */}
+									  {m.trigger && (
+											<div className={`mb-3 p-3 rounded-xl text-xs md:text-sm leading-relaxed border-l-4 ${isMidnight ? 'bg-blue-900/10 border-blue-500 text-slate-300' : 'bg-blue-50 border-blue-400 text-slate-600'}`}>
 												{m.trigger}
 											</div>
 									  )}
 
-									  <p className="text-xs md:text-base opacity-40 mb-3 italic font-black">{m.jp}</p>
 									  <div className="flex items-center gap-4 text-[10px] md:text-xs text-slate-500 mb-3 font-black opacity-60">
 										<span className="uppercase tracking-widest">{m.zone}</span>
 										<span>上次擊殺：{formatDateTime(timer?.startTime)}</span>
@@ -1161,11 +1171,6 @@
 									</div>
 
 									<div className="flex flex-row md:flex-col items-center gap-2 md:gap-4 mt-6 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-dashed border-white/10 w-full md:w-auto shrink-0">
-									  {/* ★新增：攻略按鈕★ */}
-									  <button onClick={(e) => { e.stopPropagation(); setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]})); }} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${isOpen ? 'bg-blue-500 text-white border-blue-400' : styles.btn}`}>
-											{isOpen ? <X className="w-5 h-5 md:w-7 md:h-7" /> : <List className="w-5 h-5 md:w-7 md:h-7" />}
-									  </button>
-
 									  {isAdmin && <button onClick={(e) => { e.stopPropagation(); setEditingTimeId(isEditing?null:m.id); }} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all font-black ${styles.btn}`}><Edit3 className="w-5 h-5 md:w-7 md:h-7"/></button>}
 									  <button onClick={(e) => {e.stopPropagation(); setHistoryTarget({isOpen: true, mobId: m.id, mobName: m.cn})}} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center transition-all hover:scale-110 font-black ${styles.btn}`}><FileClock className="w-5 h-5 md:w-7 md:h-7" /></button>
 									  <button onClick={() => toggleTrainMob(m)} className={`flex-1 md:flex-none p-3 md:p-5 rounded-2xl border-2 justify-center flex items-center font-black ${styles.btn} ${inTrain ? 'bg-emerald-600 text-white border-emerald-500' : ''}`}>{inTrain ? <Check className="w-5 h-5 md:w-7 md:h-7" /> : <ListPlus className="w-5 h-5 md:w-7 md:h-7" />}</button>
@@ -1173,7 +1178,7 @@
 									</div>
 								  </div>
 								) : (
-								  /* --- 清單視圖 --- */
+								  /* --- A怪 清單視圖 --- */
 								  <div className="w-full flex items-center justify-between gap-2 font-black text-left">
 									<div className="flex items-center gap-2 md:gap-8 flex-1 min-w-0 font-black">
 									  <span className="text-[10px] text-blue-500 w-8 md:w-12 shrink-0">[{selectedServer.slice(0,2)}]</span>
@@ -1184,17 +1189,16 @@
 										</div>
 										<div className="flex items-center gap-1"><span className="text-base md:text-xl font-black truncate">{m.cn}</span>{isSpecial && <Crown className="w-3 h-3 md:w-5 md:h-5 text-amber-500 fill-current shrink-0"/>}</div>
 										
-										{/* ★清單模式：只顯示時間★ */}
 										{!isKilled && winText && winText !== "一週內無符合條件" && (
 											<div className="mt-1">
 												<span className="text-[11px] md:text-xs text-emerald-500 font-bold">
-													⚡ {winText.replace('開放剩餘：', '').replace('理論：', '')}
+													⚡ {winText}
 												</span>
 											</div>
 										)}
 									  </div>
 
-									  <div className={`text-sm font-black hidden md:block shrink-0 w-48 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
+									  <div className={`hidden md:block text-sm font-black shrink-0 w-48 text-right whitespace-nowrap ${statusObj.color}`}>{statusObj.label}</div>
 									  <div className="md:hidden flex items-center gap-2 shrink-0">
 										{timer?.endTime > currentTime ? <span className="text-blue-500 animate-pulse text-sm">⏳</span> : <div className={`w-2.5 h-2.5 rounded-full ${statusObj.color.replace('text-', 'bg-')}`}></div>}
 									  </div>
@@ -1209,7 +1213,6 @@
 								)}
 							  </div>
 
-							  {/* ★清單模式：觸發條件移回這裡★ */}
 							  {isOpen && viewMode === 'list' && (
 								  <div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
 									  <div className="flex flex-col gap-2">
