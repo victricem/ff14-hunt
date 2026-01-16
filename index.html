@@ -1248,37 +1248,61 @@
                 </div>
               )}
 
-              {showWeatherModal && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 font-black font-black font-black">
-                    <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-10 rounded-[5rem] max-w-4xl w-full text-left font-black shadow-2xl font-black font-black font-black`}>
-                      <div className={`flex justify-between items-center mb-10 border-b ${isMidnight ? 'border-white/5' : 'border-slate-100'} pb-8 font-black font-black font-black`}>
-                        <h2 className="text-3xl uppercase flex items-center gap-5 font-black tracking-tight font-black font-black font-black"><CloudSun className="w-10 h-10 text-blue-400" /> 天氣預測系統</h2>
-                        <button onClick={() => setShowWeatherModal(false)} className={`p-4 rounded-full ${styles.btn}`}><X className="w-8 h-8 font-black" /></button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 font-black font-black font-black">
-                        <div className={`p-10 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-200'} rounded-[3rem] border shadow-2xl flex flex-col justify-center font-black font-black`}>
-                          <div className="text-[12px] uppercase text-slate-500 font-black mb-2 tracking-[0.2em] font-black font-black font-black">Current Eorzea Day</div>
-                          <div className="text-6xl font-mono mb-8 font-black flex items-baseline gap-4 font-black font-black font-black">Day {eorzeaData.day} <span className="text-2xl opacity-40 font-black font-black">{eorzeaData.moonLabel}</span></div>
-                          <div className="text-sm font-bold text-slate-400 flex flex-col gap-2 font-black font-black">下次換天氣：<span className="text-yellow-500 text-3xl font-black font-mono tracking-tighter">約 {eorzeaData.nextIn}</span></div>
-                        </div>
-                        <div className="space-y-6 font-black font-black font-black">
-                           <h3 className="text-[11px] font-black uppercase text-slate-500 px-2 tracking-[0.3em] font-black font-black font-black font-black">重點地圖預報</h3>
-                           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar font-black font-black font-black">
-                             {Object.keys(MAP_WEATHER_LOGIC).map(n => (
-                               <div key={n} className={`p-5 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-100'} border rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.08] font-black font-black font-black`}>
-                                  <span className="text-base font-black font-black font-black font-black">{n}</span>
-                                  <div className="text-right font-black font-black">
-                                    <div className="text-lg text-blue-400 font-black font-black font-black font-black">{MAP_WEATHER_LOGIC[n](eorzeaData.curVal)}</div>
-                                    <div className="text-[11px] text-slate-500 font-bold uppercase font-black font-black font-black font-black">Next: {MAP_WEATHER_LOGIC[n](eorzeaData.nxtVal)}</div>
-                                  </div>
-                               </div>
-                             ))}
-                           </div>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              )}
+				{showWeatherModal && (
+				  <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300 font-black">
+					  <div className={`${isMidnight ? 'bg-[#12141e] border-white/5' : 'bg-white border-slate-200'} border-2 p-5 md:p-10 rounded-[2.5rem] md:rounded-[5rem] max-w-4xl w-full text-left shadow-2xl flex flex-col max-h-[90vh] md:max-h-auto overflow-hidden`}>
+						
+						{/* Header: 手機版更緊湊 */}
+						<div className={`flex justify-between items-center mb-4 md:mb-10 border-b ${isMidnight ? 'border-white/5' : 'border-slate-100'} pb-4 md:pb-8 shrink-0`}>
+						  <h2 className="text-xl md:text-3xl uppercase flex items-center gap-3 md:gap-5 tracking-tight font-black">
+							<CloudSun className="w-6 h-6 md:w-10 md:h-10 text-blue-400" /> 
+							<span>天氣預測系統</span>
+						  </h2>
+						  <button onClick={() => setShowWeatherModal(false)} className={`p-2 md:p-4 rounded-full ${styles.btn}`}>
+							<X className="w-6 h-6 md:w-8 md:h-8" />
+						  </button>
+						</div>
+
+						{/* Content: 手機版支援滾動，電腦版正常顯示 */}
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-12 overflow-y-auto md:overflow-visible custom-scrollbar pr-1 md:pr-0">
+						  
+						  {/* Left Column: 當前時間資訊 (手機版改為橫向排列以省空間) */}
+						  <div className={`p-5 md:p-10 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-200'} rounded-[2rem] md:rounded-[3rem] border shadow-2xl flex flex-col justify-center shrink-0`}>
+							<div className="flex flex-row md:flex-col justify-between items-center md:items-start gap-4">
+								<div>
+									<div className="text-[10px] md:text-[12px] uppercase text-slate-500 mb-1 md:mb-2 tracking-[0.2em] font-black">Current Eorzea Day</div>
+									<div className="text-3xl md:text-6xl font-mono md:mb-8 flex items-baseline gap-2 md:gap-4 font-black">
+										Day {eorzeaData.day} 
+										<span className="text-lg md:text-2xl opacity-40">{eorzeaData.moonLabel}</span>
+									</div>
+								</div>
+								{/* 倒數計時區塊 */}
+								<div className="text-right md:text-left bg-black/10 md:bg-transparent px-3 py-2 md:p-0 rounded-xl">
+									<div className="text-[10px] md:text-sm font-bold text-slate-400 mb-0.5 md:mb-2">下次換天氣</div>
+									<div className="text-yellow-500 text-xl md:text-3xl font-mono tracking-tighter font-black">約 {eorzeaData.nextIn}</div>
+								</div>
+							</div>
+						  </div>
+
+						  {/* Right Column: 地圖列表 */}
+						  <div className="space-y-3 md:space-y-6">
+							 <h3 className="text-[10px] md:text-[11px] font-black uppercase text-slate-500 px-2 tracking-[0.3em]">重點地圖預報</h3>
+							 <div className="space-y-2 md:space-y-3">
+							   {Object.keys(MAP_WEATHER_LOGIC).map(n => (
+								 <div key={n} className={`p-4 md:p-5 ${isMidnight ? 'bg-white/5 border-white/5' : 'bg-black/5 border-slate-100'} border rounded-2xl md:rounded-3xl flex justify-between items-center transition-all hover:bg-white/[0.08]`}>
+									<span className="text-sm md:text-base font-black">{n}</span>
+									<div className="text-right">
+									  <div className="text-base md:text-lg text-blue-400 font-black">{MAP_WEATHER_LOGIC[n](eorzeaData.curVal)}</div>
+									  <div className="text-[10px] md:text-[11px] text-slate-500 font-bold uppercase">Next: {MAP_WEATHER_LOGIC[n](eorzeaData.nxtVal)}</div>
+									</div>
+								 </div>
+							   ))}
+							 </div>
+						  </div>
+						</div>
+					  </div>
+				  </div>
+				)}
 
               <HistoryLogModal 
                 isOpen={historyTarget.isOpen} 
