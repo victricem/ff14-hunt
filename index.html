@@ -659,11 +659,9 @@
             
             try {
                 if (type === 'reset') { 
-                    // 重置邏輯 (只有管理員能做)
                     await setDoc(mobRef, {}); 
                     logAction(id, name, 'RESET', '重置了計時器'); 
                 } else { 
-                    // 擊殺邏輯 (一般人可做，但時間必須往後)
                     await setDoc(mobRef, { 
                         startTime: Date.now(), 
                         endTime: Date.now() + (window * 3600000), 
@@ -672,20 +670,15 @@
                     }, { merge: true }); 
                     logAction(id, name, 'KILL', `標記擊殺，冷卻 ${window} 小時`); 
                 }
-                
-                // 成功後關閉視窗
                 setConfirmModal({ ...confirmModal, isOpen: false });
 
             } catch (error) {
                 console.error("更新失敗:", error);
-                
-                // 判斷錯誤類型並提示使用者
                 if (error.code === 'permission-denied') {
-                    alert("⛔ 權限不足！更新失敗。\n\n可能原因：\n1. 您的電腦時間不準確 (請校正時間)\n2. 您不是管理員卻嘗試重置\n3. 後端規則尚未設定您的 UID");
+                    alert("⛔ 權限不足！更新失敗。");
                 } else {
                     alert(`❌ 發生錯誤：${error.message}`);
                 }
-                // 即使失敗也關閉視窗，避免卡死
                 setConfirmModal({ ...confirmModal, isOpen: false });
             }
           };
@@ -1353,6 +1346,7 @@
     </script>
 </body>
 </html>
+
 
 
 
