@@ -846,7 +846,7 @@
                      <div className={`p-2 md:px-4 md:py-3 rounded-2xl border-2 flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 ${isMidnight ? 'bg-blue-500/10 border-blue-500/20' : 'bg-white border-blue-500/20'}`}>
                         <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
                         <div className="text-center md:text-left">
-                            <div className="text-[9px] text-slate-500 uppercase font-black leading-none mb-0.5">LT</div>
+                            <div className="text-[9px] text-slate-500 uppercase font-black leading-none mb-0.5">LT　UTC+8</div>
                             <div className="text-sm md:text-xl font-mono font-black leading-none">{new Date(currentTime).toLocaleTimeString([], {hour12:false})}</div>
                         </div>
                      </div>
@@ -1346,6 +1346,7 @@
     </script>
 </body>
 </html>
+
 
 
 
