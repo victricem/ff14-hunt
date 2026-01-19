@@ -59,6 +59,27 @@
             mask-image: linear-gradient(to right, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
+		
+		.monster-bg-art {
+			position: absolute;
+			top: -30px;
+			right: -40px;
+			width: 320px;
+			height: auto;
+			z-index: 0;
+			pointer-events: none;
+			opacity: 0.15;
+		}
+
+		.monster-bg-art img {
+			width: 100%;
+			display: block;
+			filter: invert(1) grayscale(1); 
+			mix-blend-mode: screen; 
+			-webkit-mask-image: linear-gradient(to bottom left, black 30%, transparent 100%);
+			mask-image: linear-gradient(to bottom left, black 30%, transparent 100%);
+		}
+		
     </style>
 </head>
 <body>
@@ -1078,6 +1099,14 @@
                         return (
                           <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3rem] p-5 md:p-10 transition-all font-black ${!isKilled ? styles.readyGlowA : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
                             
+							{viewMode === 'card' && m.cn === '水晶化身之王' && (
+							  <div className="monster-bg-art">
+								{/* 請注意：這裡的 src 要換成你存放該圖片的實際連結或路徑 */}
+								<img src="https://i.imgur.com/你的圖片連結.jpg" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+ 
+														
                             <div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
                                  className={viewMode === 'card' ? "" : `p-4 md:p-6 flex items-center justify-between transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10 font-black' : 'bg-emerald-50/5') : 'hover:bg-white/5'} cursor-pointer`}>
                               
@@ -1346,17 +1375,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
