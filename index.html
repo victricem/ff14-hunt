@@ -62,7 +62,6 @@
 		
 
 
-		/* --- 怪物背景圖容器 --- */
 		.monster-bg-art {
 			position: absolute;
 			top: 0;
@@ -74,70 +73,40 @@
 			overflow: hidden;
 		}
 
-		/* --- 通用圖片設定 --- */
 		.monster-bg-art img {
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			object-position: center 25%; /* 稍微往上調，讓翅膀更明顯 */
+			object-position: center 30%; /* 調整圖片重心 */
 			display: block;
-			transition: all 0.5s ease;   /* 切換主題時有過渡效果 */
 			
-			/* 基礎動畫：緩慢浮動，增加活體感 */
-			animation: float-art 10s ease-in-out infinite alternate;
+			/* 動畫：緩慢呼吸感 */
+			animation: float-art 20s ease-in-out infinite alternate;
 		}
 
-		/* ====== 🌙 深色模式 (Midnight) - 強力發光特效 ====== */
+		/* --- 深色模式專用特效 (發光白線) --- */
 		.monster-bg-art.theme-midnight img {
-			opacity: 0.5; /* 提高不透明度，讓它更亮 */
-			
-			/* 核心魔法：
-			   1. invert(1): 黑線變白線
-			   2. brightness(1.2): 增加白線亮度
-			   3. drop-shadow(...): 第一層白色光暈 (核心光)
-			   4. drop-shadow(...): 第二層青色光暈 (氛圍光，配合 FF14 科技感) 
-			*/
-			filter: invert(1) grayscale(1) brightness(1.2) 
-					drop-shadow(0 0 2px rgba(255, 255, 255, 0.9)) 
-					drop-shadow(0 0 10px rgba(56, 189, 248, 0.6)); 
-					
-			mix-blend-mode: screen; /* 濾掉黑色背景，只留光 */
-			
-			/* 遮罩：讓左側文字區保持乾淨，右側顯示發光怪物 */
-			-webkit-mask-image: linear-gradient(to right, transparent 5%, black 60%);
-			mask-image: linear-gradient(to right, transparent 5%, black 60%);
+			opacity: 0.25; /* 稍微調亮一點 */
+			filter: invert(1) grayscale(1) drop-shadow(0 0 8px rgba(255,255,255,0.6)); /* 強力發光 */
+			mix-blend-mode: screen; /* 去背：只留亮部 */
+			/* 遮罩：左邊保留 15% 透明度，不要完全消失 */
+			-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.15) 0%, black 60%);
+			mask-image: linear-gradient(to right, rgba(0,0,0,0.15) 0%, black 60%);
 		}
 
-		/* ====== ☀️ 日光模式 (Sunlight) - 尊爵不凡燙金特效 ====== */
+		/* --- 日光模式專用特效 (深色墨線) --- */
 		.monster-bg-art.theme-sunlight img {
-			opacity: 0.6; /* 提高不透明度，讓金色更明顯 */
-			
-			/* 燙金魔法組合拳：
-			   1. grayscale(1): 先轉黑白，確保顏色統一
-			   2. sepia(1): 轉為深褐色調 (金屬底色)
-			   3. saturate(400%): 極大幅度提高飽和度，讓褐色變為濃郁的赤金色
-			   4. contrast(2): 提高對比，創造出金屬般銳利的高光和深色陰影
-			   5. brightness(0.9): 稍微壓暗整體，避免過曝，更有質感
-			   6. drop-shadow(...): 加上一層淡淡的金色光暈，模擬金屬漫反射
-			*/
-			filter: grayscale(1) sepia(1) saturate(400%) contrast(2) brightness(0.9)
-					drop-shadow(0 1px 2px rgba(180, 130, 50, 0.5));
-					
-			/* 使用 'hard-light' 或 'overlay' 可以讓金色與白色背景更好地融合 */
-			mix-blend-mode: hard-light; 
-			
-			/* 遮罩：讓左側文字區保持乾淨，右側顯示燙金怪物 */
-			-webkit-mask-image: linear-gradient(to right, transparent 10%, black 70%);
-			mask-image: linear-gradient(to right, transparent 10%, black 70%);
-
-			/* 額外效果：讓線條邊緣更銳利，像真的壓印上去的 */
-			transform: translateZ(0); /* 啟用硬體加速 */
+			opacity: 0.15; /* 淡淡的浮水印感 */
+			filter: grayscale(1) contrast(1.2); /* 轉為深灰線條 */
+			mix-blend-mode: multiply; /* 去背：只留暗部 (正片疊底) */
+			/* 遮罩：左邊保留 5% 透明度 */
+			-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.05) 0%, black 60%);
+			mask-image: linear-gradient(to right, rgba(0,0,0,0.05) 0%, black 60%);
 		}
 
-		/* 動畫設定 */
 		@keyframes float-art {
-			0% { transform: scale(1.05) translateY(0px); }
-			100% { transform: scale(1.1) translateY(-10px); }
+			0% { transform: scale(1.0) translateY(0); }
+			100% { transform: scale(1.08) translateY(-5px); }
 		}
 		
     </style>
@@ -1018,11 +987,11 @@
 							
 							{/* --- [新增] 全版背景圖片區塊 --- */}
 							{viewMode === 'card' && m.cn === '水晶化身之王' && (
-							  /* 關鍵修改：這裡加入了 className={...} 來判斷是 midnight 還是 sunlight */
-							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
-								<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/arch_aethereater.png" alt="Lord of the Crystallizer Art" />
-							  </div>
-							)}
+								  /* 這裡加入了 isMidnight 的判斷，自動切換特效 class */
+								  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+									<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/arch_aethereater.png" alt="Lord of the Crystallizer Art" />
+								  </div>
+								)}
 							{/* ----------------------------- */}
 
 							<div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
