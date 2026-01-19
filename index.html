@@ -85,7 +85,8 @@
 			
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, black 50%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, black 50%, black 100%);
-		
+			
+			/* 動畫：緩慢浮動效果 (選用，增加生動感) */
 			animation: float-art 20s ease-in-out infinite alternate;
 		}
 
@@ -1072,32 +1073,6 @@
 									<button onClick={(e) => {e.stopPropagation(); requestToggleKill(m.id, m.cn, m.window)}} className={`p-1.5 md:p-3.5 rounded-lg text-white shadow-lg ${isKilled?'bg-red-600':'bg-emerald-600'}`}>{isKilled?<RotateCcw className="w-4 h-4 md:w-6 md:h-6"/>:<CheckCircle className="w-4 h-4 md:w-6 md:h-6"/>}</button>
 								</div>
 							  )}
-							</div>
-						  )}
-						</div>
-
-						{isOpen && viewMode === 'list' && (
-							<div className={`p-6 md:p-8 text-xs md:text-sm border-l-8 border-l-blue-600 animate-in slide-in-from-top-2 font-black ${isMidnight ? 'bg-white/5 text-slate-400' : 'bg-black/5 text-slate-500 shadow-inner'}`}>
-								<div className="flex flex-col gap-2">
-									{!isSS && (
-										<div className="flex items-center gap-2 opacity-80">
-										  <Clock className="w-4 h-4" /> 
-										  <span>上次擊殺時間：{formatDateTime(timer?.startTime)}</span>
-										</div>
-									)}
-									{m.trigger && (
-									  <div className="mt-2 pt-2 border-t border-white/10 opacity-60">
-										<span className="font-bold block mb-1 text-blue-400">💡 觸發條件：</span>
-										{m.trigger}
-									  </div>
-									)}
-								</div>
-							</div>
-						)}
-
-						{(isAdmin && !isSS && (viewMode === 'card' || isEditing)) && <CalibrationUI isOpen={true} mobId={m.id} win={m.window} isListView={viewMode === 'list'} isMidnight={isMidnight} styles={styles} onInputChange={setCustomTimeInput} onUpdate={handleUpdateKillTime} />}
-					  </div>
-					);
 							</div>
 						  )}
 						</div>
