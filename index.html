@@ -955,9 +955,17 @@
                         return (
                           <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled && !isSS ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
                             
+													{/* --- 這是新加入的圖片區塊 (現在位置正確了！) --- */}
+							{viewMode === 'card' && m.cn === '水晶化身之王' && (
+							  <div className="monster-bg-art">
+								<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/arch_aethereater.png" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{/* ----------------------------------------------- */}
+							
+							
                             <div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
-                                 className={viewMode === 'card' ? "" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}>
-                              
+								className={viewMode === 'card' ? "relative z-10" : `p-4 md:p-8 flex items-center justify-between cursor-pointer transition-all ${!isKilled ? (isMidnight ? 'bg-emerald-500/10' : 'bg-emerald-50/5') : 'hover:bg-white/5'}`}> 
                               {viewMode === 'card' ? (
 
                                 <div className="flex flex-col font-black w-full text-left">
@@ -1099,12 +1107,7 @@
                         return (
                           <div key={m.id} className={viewMode === 'card' ? `${styles.card} rounded-[2rem] md:rounded-[3rem] p-5 md:p-10 transition-all font-black ${!isKilled ? styles.readyGlowA : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
                             
-							{viewMode === 'card' && m.cn === '水晶化身之王' && (
-							  <div className="monster-bg-art">
-								{/* 請注意：這裡的 src 要換成你存放該圖片的實際連結或路徑 */}
-								<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/arch_aethereater.png" alt="Lord of the Crystallizer Art" />
-							  </div>
-							)}
+
  
 														
                             <div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
