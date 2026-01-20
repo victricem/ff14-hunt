@@ -126,29 +126,29 @@
 		   ================================================================= */
 		@media (max-width: 768px) {
 			
-			/* 1. 重心調整：維持您覺得不錯的設定 (靠右、偏下) */
+			/* 1. 重心調整：改成 100% (完全靠右)，讓左邊文字區空間最大化 */
 			.monster-bg-art img {
-				object-position: 90% 40% !important; 
+				object-position: 100% 40% !important; 
 			}
 
-			/* 2. 遮罩調整：左側不再是完全透明，而是保留 30% 的能見度 */
+			/* 2. 遮罩調整：左側改為 10% 的極淡能見度 (rgba(..., 0.1)) */
 			.monster-bg-art.theme-sunlight img,
 			.monster-bg-art.theme-midnight img {
 				/* 解說：
-				   rgba(0,0,0, 0.3) -> 代表 30% 的顯示濃度 (原本是 transparent = 0%)
-				   0% ~ 45%         -> 左半邊維持 30% 的淡淡顯示
+				   rgba(0,0,0, 0.1) -> 代表 10% 的顯示濃度 (非常淡，不擋字)
+				   0% ~ 45%         -> 左半邊維持 10% 淡淡顯示
 				   45% ~ 100%       -> 右半邊漸層過渡到 100% 全顯示
 				*/
-				-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.3) 45%, black 100%) !important;
-				mask-image: linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.3) 45%, black 100%) !important;
+				-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
+				mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
 			}
 
-			/* 3. 透明度微調：稍微提高一點點基礎亮度，讓那 30% 更容易被看見 */
+			/* 3. 透明度微調：稍微調高一點點，因為已經靠右了，右邊可以亮一點 */
 			.monster-bg-art.theme-sunlight img {
-				opacity: 0.5 !important; 
+				opacity: 0.6 !important; 
 			}
 			.monster-bg-art.theme-midnight img {
-				opacity: 0.4 !important;
+				opacity: 0.5 !important;
 			}
 		}
 
