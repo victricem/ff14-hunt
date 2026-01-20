@@ -362,7 +362,7 @@
               { cn: '爬骨怪龍', jp: 'ボーンクローラー', zone: '基拉巴尼亞山區', window: 84, trigger: '乘坐運輸陸行鳥穿過地圖中線時機率觸發。' },
               { cn: '鹽和光', jp: 'ソルト・アンド・ライト', zone: '基拉巴尼亞湖區', window: 84, trigger: '所有玩家總共從背包捨棄道具 50 次。' },
               { cn: '巨大鰩', jp: 'オキナ', zone: '紅玉海', window: 84, trigger: '擊殺 100 隻無殼觀夢螺 + 100 隻觀夢螺，且在滿月 (16-20日) 時觸發，首日為 12:00 開始。', windowType: 'moon', moon: [16,20] },
-              { cn: '歐爾嘉娜', jp: 'オルガナ', zone: '太陽神草原', window: 84, trigger: '完成 FATE「石人英雄——格爾該朝魯」後經過刷新點。' },
+              { cn: '兀魯忽乃朝魯', jp: 'オルガナ', zone: '太陽神草原', window: 84, trigger: '完成 FATE「石人英雄——格爾該朝魯」後經過刷新點。' },
               { cn: '伽馬', jp: 'ガンマ', zone: '延夏', window: 84, trigger: 'ET 17:00-08:00 帶著寵物「迷你亞歷山大」經過刷新點。', windowType: 'time', time: [17,8] },
             ],
             a: [
@@ -411,7 +411,6 @@
               { cn: '牛頭黑神', jp: 'チェルノボーグ', zone: '拉諾西亞外地', window: 50, trigger: '玩家角色陷入無法戰鬥狀態時概率觸發。' },
               { cn: '薩法特', jp: 'サファト', zone: '庫爾札斯中央高地', window: 50, trigger: '玩家角色通過墜落傷害使血量歸 1 時概率觸發。' },
               { cn: '阿格里帕', jp: 'アグリッパ', zone: '摩杜納', window: 50, trigger: '打開藏寶圖寶箱（G3陳舊的巨蟾蜍革地圖、G4陳舊的野豬革地圖、G5陳舊的毒蜥蜴革地圖、綠圖鞣革制的隱藏地圖、古武神秘地圖）時概率觸發。' },
-              { cn: '烏爾伽魯', jp: 'ウルガル', zone: '黑衣森林東部林區', window: 50, trigger: '開始傭兵理符或軍隊理符時機率觸發。' },
             ],
             a: [
               { cn: '醜男子 沃迦加', jp: '醜男のヴォガージャ', zone: '中拉諾西亞', window: 4 }, { cn: '烏克提希', jp: 'ウンクテヒ', zone: '拉諾西亞低地', window: 4 },
@@ -1112,6 +1111,156 @@
 							  </div>
 							)}
 							
+							{/* --------------4.0--------------- */}
+							{viewMode === 'card' && m.cn === '優曇婆羅花' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Udumbara.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '爬骨怪龍' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Bone_Crawler.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '鹽和光' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Salt_and_Light.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '巨大鰩' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Okina.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '兀魯忽乃朝魯' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Orghana.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '伽馬' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Gamma.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							
+							{/* --------------3.0--------------- */}
+							{viewMode === 'card' && m.cn === '盧克洛塔' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Leucrotta.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '凱撒貝希摩斯' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Kaiser_Behemoth.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '神穆爾鳥' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Senmurv.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '蒼白騎士' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/The_Pale_Rider.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '剛德瑞瓦' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Gandarewa.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '極樂鳥' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Bird_of_Paradise.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							
+							{/* --------------2.0--------------- */}
+							{viewMode === 'card' && m.cn === '雷德羅巨蛇' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Laideronnette.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '烏爾伽魯' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Wulgaru.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '奪心魔' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Mindflayer.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '千竿口花希達' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Thousand-cast_Theda.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '虛無探索者' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Zona_Seeker.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '布隆特斯' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Brontes.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '巴拉烏爾' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Lampalagua.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '努紐努維' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Nunyunuwi.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '蚓螈巨蟲' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Minhocao.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '護土精靈' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Croque-Mitaine.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '咕爾呱洛斯' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Croakadile.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '伽洛克' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/the_Garlok.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '火憤牛' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Bonnacon.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '南迪' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Nandi.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '牛頭黑神' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Chernobog.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '薩法特' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Safat.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '阿格里帕' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Agrippa_the_Mighty.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
 							
 							{/* ----------------------------- */}
 
