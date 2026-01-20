@@ -60,6 +60,7 @@
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
 		
+		/* --- 怪物背景圖容器 --- */
 		.monster-bg-art {
 			position: absolute;
 			top: 0;
@@ -80,32 +81,43 @@
 			animation: float-art 20s ease-in-out infinite alternate;
 		}
 
+		/* 電腦版預設重心 */
 		.monster-bg-art img {
 			object-position: center 30%; 
 		}
 
+
 		.monster-bg-art.theme-sunlight img {
 			opacity: 0.5;
-			filter: invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
+			
+			filter: contrast(2) brightness(1.2) invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
+			
 			mix-blend-mode: multiply;
+			
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
 
+
 		.monster-bg-art.theme-midnight img {
 			opacity: 0.3;
-			filter: invert(1) grayscale(1) brightness(1.5) drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
+			
+			filter: contrast(2.5) brightness(1.5) invert(1) grayscale(1) brightness(1.5) drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
+			
 			mix-blend-mode: screen;
+			
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
 
 		@media (max-width: 768px) {
+			
 			.monster-bg-art img {
-				width: 120% !important;
-				transform: translateX(15%) !important;
-				object-position: center 30% !important;
+				width: 120% !important; 
+				transform: translateX(15%) !important; 
+				object-position: center 30% !important; 
 			}
+
 			.monster-bg-art.theme-sunlight img,
 			.monster-bg-art.theme-midnight img {
 				-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
@@ -119,6 +131,7 @@
 				opacity: 0.5 !important;
 			}
 		}
+
 		@keyframes float-art {
 			0% { transform: scale(1.05) translateY(0px); }
 			100% { transform: scale(1.1) translateY(-10px); }
