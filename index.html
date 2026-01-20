@@ -126,24 +126,29 @@
 		   ================================================================= */
 		@media (max-width: 768px) {
 			
-			/* 1. 重心調整：改成 100% (完全靠右)，讓左邊文字區空間最大化 */
+			/* 1. 重心與位置調整：
+			   width: 120% -> 讓圖片比卡片寬，這樣才有空間移動
+			   translateX(15%) -> 整張圖直接往右平移，把怪物推到右邊
+			   object-position: top -> 讓翅膀不要被切掉太多
+			*/
 			.monster-bg-art img {
-				object-position: 100% 40% !important; 
+				width: 120% !important; /* 放大寬度 */
+				transform: translateX(15%) !important; /* 強制往右推 */
+				object-position: center 30% !important; /* 上下重心維持 */
 			}
 
-			/* 2. 遮罩調整：左側改為 10% 的極淡能見度 (rgba(..., 0.1)) */
+			/* 2. 遮罩調整：左側 45% 區域只有 10% 的超淡能見度 */
 			.monster-bg-art.theme-sunlight img,
 			.monster-bg-art.theme-midnight img {
-				/* 解說：
-				   rgba(0,0,0, 0.1) -> 代表 10% 的顯示濃度 (非常淡，不擋字)
-				   0% ~ 45%         -> 左半邊維持 10% 淡淡顯示
-				   45% ~ 100%       -> 右半邊漸層過渡到 100% 全顯示
+				/* rgba(0,0,0, 0.1) = 10% 顯示 (極淡)
+				   0% ~ 45%         = 保持 10% 濃度
+				   45% ~ 100%       = 漸層過渡到全顯示
 				*/
 				-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
 				mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
 			}
 
-			/* 3. 透明度微調：稍微調高一點點，因為已經靠右了，右邊可以亮一點 */
+			/* 3. 透明度微調：稍微調高基礎亮度，讓右邊的怪物清楚一點 */
 			.monster-bg-art.theme-sunlight img {
 				opacity: 0.6 !important; 
 			}
