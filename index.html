@@ -1000,7 +1000,8 @@
 						return (
 						  <div key={m.id} className={viewMode === 'card' ? `${styles.card} relative overflow-hidden rounded-[2rem] md:rounded-[3.5rem] border-2 p-5 md:p-12 transition-all duration-300 font-black ${!isKilled && !isSS ? styles.readyGlowS : ''} ${isSpecial ? styles.specialKing : ''}` : `flex flex-col font-black ${isSpecial ? styles.specialKing : ''}`}>
 							
-							{/* --- [新增] 全版背景圖片區塊 --- */}
+							{/* --- S 全版背景圖片區塊 --- */}
+							{/* --------------7.0--------------- */}
 							{viewMode === 'card' && m.cn === '水晶化身之王' && (
 							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
 								<img src="https://ff14hunt.blob.core.windows.net/image/arch_aethereater.webp" alt="Lord of the Crystallizer Art" />
@@ -1036,6 +1037,44 @@
 								<img src="https://ff14hunt.blob.core.windows.net/image/The_Forecaster.webp" alt="Lord of the Crystallizer Art" />
 							  </div>
 							)}
+							
+							/* --------------6.0--------------- */}
+							{viewMode === 'card' && m.cn === '克爾' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Ker.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '布弗魯' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Burfurlur_the_Canny.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '頗胝迦' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Sphatika.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '阿姆斯特朗' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Armstrong.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '沉思之物' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Ruminator.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '俄菲翁尼厄斯' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Ophioneus.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							{viewMode === 'card' && m.cn === '狹縫' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://ff14hunt.blob.core.windows.net/image/Narrow-rift.webp" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
+							
 							
 							{/* ----------------------------- */}
 
