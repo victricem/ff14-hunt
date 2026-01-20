@@ -123,27 +123,32 @@
 
 		/* =================================================================
 		   📱 手機版特別優化 (螢幕寬度 < 768px 時觸發)
-		================================================================= */
+		   ================================================================= */
 		@media (max-width: 768px) {
 			
-			/* 1. 重心調整：強制往右推，並稍微往下看，避開左上角標題 */
+			/* 1. 重心調整：維持您覺得不錯的設定 (靠右、偏下) */
 			.monster-bg-art img {
 				object-position: 90% 40% !important; 
 			}
 
-			/* 2. 遮罩加強：左側 45% 的區域完全透明，確保文字絕對清晰 */
+			/* 2. 遮罩調整：左側不再是完全透明，而是保留 30% 的能見度 */
 			.monster-bg-art.theme-sunlight img,
 			.monster-bg-art.theme-midnight img {
-				-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 45%, black 100%) !important;
-				mask-image: linear-gradient(to right, transparent 0%, transparent 45%, black 100%) !important;
+				/* 解說：
+				   rgba(0,0,0, 0.3) -> 代表 30% 的顯示濃度 (原本是 transparent = 0%)
+				   0% ~ 45%         -> 左半邊維持 30% 的淡淡顯示
+				   45% ~ 100%       -> 右半邊漸層過渡到 100% 全顯示
+				*/
+				-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.3) 45%, black 100%) !important;
+				mask-image: linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.3) 45%, black 100%) !important;
 			}
 
-			/* 3. 透明度微調：手機版稍微調低一點點，避免太搶眼 */
+			/* 3. 透明度微調：稍微提高一點點基礎亮度，讓那 30% 更容易被看見 */
 			.monster-bg-art.theme-sunlight img {
-				opacity: 0.4 !important; 
+				opacity: 0.5 !important; 
 			}
 			.monster-bg-art.theme-midnight img {
-				opacity: 0.25 !important;
+				opacity: 0.4 !important;
 			}
 		}
 
