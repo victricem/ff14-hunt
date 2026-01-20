@@ -78,51 +78,61 @@
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			/* 手機版關鍵：將圖片重心向右移，避免主體擋住左邊文字 */
-			object-position: 80% 30%; 
 			display: block;
 			transition: all 0.5s ease;
 			animation: float-art 20s ease-in-out infinite alternate;
 		}
 
-		/* ====== ☀️ 日光模式 (Sunlight) - 尊爵燙金 (手機優化版) ====== */
+		/* =========================================
+		   電腦版預設設定 (保持您滿意的效果)
+		   ========================================= */
+		.monster-bg-art img {
+			object-position: center 30%; /* 電腦版重心 */
+		}
+
+		/* ☀️ 日光模式 (Sunlight) - 電腦版 */
 		.monster-bg-art.theme-sunlight img {
-			/* 降低一點不透明度，避免干擾深色文字 */
 			opacity: 0.5; 
-			
-			/* 燙金濾鏡 (維持原樣) */
 			filter: invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
 			mix-blend-mode: multiply;
-			
-			/* 關鍵修改：加強遮罩 */
-			/* 左邊 0%~40% 完全透明 (給文字用)，40%~100% 慢慢顯示圖片 */
-			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 100%);
-			mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 100%);
+			/* 左到右漸層遮罩 */
+			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
+			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
 
-		/* ====== 🌙 深色模式 (Midnight) - 科技發光 (手機優化版) ====== */
+		/* 🌙 深色模式 (Midnight) - 電腦版 */
 		.monster-bg-art.theme-midnight img {
-			/* 降低一點不透明度，避免亮線干擾白色文字 */
 			opacity: 0.3; 
-			
-			/* 發光濾鏡 (維持原樣) */
-			filter: invert(1) grayscale(1) brightness(1.5) 
-					drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
+			filter: invert(1) grayscale(1) brightness(1.5) drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
 			mix-blend-mode: screen;
-			
-			/* 關鍵修改：加強遮罩 */
-			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 100%);
-			mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 100%);
+			/* 左到右漸層遮罩 */
+			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
+			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
 
-		/* 手機版特別優化 (螢幕 < 768px 時) */
+		/* =========================================
+		   📱 手機版特別優化 (螢幕 < 768px)
+		   ========================================= */
 		@media (max-width: 768px) {
+			
+			/* 1. 調整圖片重心：往下降，讓出上方空間給文字 */
 			.monster-bg-art img {
-				opacity: 0.25 !important; /* 在手機上強制變得更淡一點 */
-				object-position: center center; /* 手機上置中顯示 */
-				/* 讓遮罩在手機上更激進，確保文字清晰 */
-				-webkit-mask-image: linear-gradient(to bottom, transparent 50%, black 100%) !important;
-				mask-image: linear-gradient(to bottom, transparent 50%, black 100%) !important;
+				object-position: center 60% !important; 
+			}
+
+			/* 2. 調整遮罩方向：改成「由上往下」漸層 (上方透明 -> 下方顯示) */
+			.monster-bg-art.theme-sunlight img,
+			.monster-bg-art.theme-midnight img {
+				-webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, black 100%) !important;
+				mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, black 100%) !important;
+			}
+
+			/* 3. 微調透明度：因為錯開了，可以稍微亮一點 */
+			.monster-bg-art.theme-sunlight img {
+				opacity: 0.4 !important; /* 日光模式手機版 */
+			}
+			.monster-bg-art.theme-midnight img {
+				opacity: 0.35 !important; /* 深色模式手機版 */
 			}
 		}
 
