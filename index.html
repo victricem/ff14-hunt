@@ -60,95 +60,58 @@
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
 		
-
-
-		/* =================================================================
-		   🐲 全版背景圖核心設定 (S-Rank Special)
-		================================================================= */
-
-		/* --- 容器定位 --- */
 		.monster-bg-art {
 			position: absolute;
 			top: 0;
 			left: 0;
 			width: 100%;
 			height: 100%;
-			z-index: 0; /* 放在最底層 */
-			pointer-events: none; /* 讓滑鼠點擊穿透 */
+			z-index: 0;
+			pointer-events: none;
 			overflow: hidden;
 		}
 
-		/* --- 圖片通用設定 (動畫與過渡) --- */
 		.monster-bg-art img {
 			width: 100%;
 			height: 100%;
-			object-fit: cover; /* 填滿容器並自動裁切 */
+			object-fit: cover;
 			display: block;
-			transition: all 0.5s ease; /* 主題切換時的柔和過渡 */
-			/* 緩慢浮動動畫，增加活體感 */
+			transition: all 0.5s ease;
 			animation: float-art 20s ease-in-out infinite alternate;
 		}
 
-		/* =================================================================
-		   💻 電腦版預設 (保持您滿意的現狀)
-		================================================================= */
-
-		/* 電腦版重心：稍微偏左上一點，讓翅膀展開 */
 		.monster-bg-art img {
 			object-position: center 30%; 
 		}
 
-		/* ☀️ 日光模式 (Sunlight) - 電腦版燙金 */
 		.monster-bg-art.theme-sunlight img {
 			opacity: 0.5;
-			/* 燙金濾鏡組合 */
 			filter: invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
-			mix-blend-mode: multiply; /* 正片疊底去背 */
-			/* 遮罩：左側 20% 漸層透明 */
+			mix-blend-mode: multiply;
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
 
-		/* 🌙 深色模式 (Midnight) - 電腦版發光 */
 		.monster-bg-art.theme-midnight img {
 			opacity: 0.3;
-			/* 藍白發光濾鏡 */
 			filter: invert(1) grayscale(1) brightness(1.5) drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
-			mix-blend-mode: screen; /* 濾色去背 */
-			/* 遮罩：左側 20% 漸層透明 */
+			mix-blend-mode: screen;
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
 
-
-		/* =================================================================
-		   📱 手機版特別優化 (螢幕寬度 < 768px 時觸發)
-		   ================================================================= */
 		@media (max-width: 768px) {
-			
-			/* 1. 重心與位置調整：
-			   width: 120% -> 讓圖片比卡片寬，這樣才有空間移動
-			   translateX(15%) -> 整張圖直接往右平移，把怪物推到右邊
-			   object-position: top -> 讓翅膀不要被切掉太多
-			*/
 			.monster-bg-art img {
-				width: 120% !important; /* 放大寬度 */
-				transform: translateX(15%) !important; /* 強制往右推 */
-				object-position: center 30% !important; /* 上下重心維持 */
+				width: 120% !important;
+				transform: translateX(15%) !important;
+				object-position: center 30% !important;
 			}
-
-			/* 2. 遮罩調整：左側 45% 區域只有 10% 的超淡能見度 */
 			.monster-bg-art.theme-sunlight img,
 			.monster-bg-art.theme-midnight img {
-				/* rgba(0,0,0, 0.1) = 10% 顯示 (極淡)
-				   0% ~ 45%         = 保持 10% 濃度
-				   45% ~ 100%       = 漸層過渡到全顯示
-				*/
 				-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
 				mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
 			}
 
-			/* 3. 透明度微調：稍微調高基礎亮度，讓右邊的怪物清楚一點 */
 			.monster-bg-art.theme-sunlight img {
 				opacity: 0.6 !important; 
 			}
@@ -156,8 +119,6 @@
 				opacity: 0.5 !important;
 			}
 		}
-
-		/* --- 浮動動畫關鍵影格 --- */
 		@keyframes float-art {
 			0% { transform: scale(1.05) translateY(0px); }
 			100% { transform: scale(1.1) translateY(-10px); }
@@ -1465,3 +1426,4 @@
     </script>
 </body>
 </html>
+
