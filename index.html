@@ -62,6 +62,7 @@
 		
 
 
+		/* --- 怪物背景圖容器 --- */
 		.monster-bg-art {
 			position: absolute;
 			top: 0;
@@ -77,36 +78,47 @@
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			object-position: center 30%; /* 調整圖片重心 */
+			object-position: center 30%;
 			display: block;
-			
-			/* 動畫：緩慢呼吸感 */
-			animation: float-art 20s ease-in-out infinite alternate;
+			transition: all 0.5s ease;
+			animation: float-art 15s ease-in-out infinite alternate;
 		}
 
-		/* --- 深色模式專用特效 (發光白線) --- */
-		.monster-bg-art.theme-midnight img {
-			opacity: 0.25; /* 稍微調亮一點 */
-			filter: invert(1) grayscale(1) drop-shadow(0 0 8px rgba(255,255,255,0.6)); /* 強力發光 */
-			mix-blend-mode: screen; /* 去背：只留亮部 */
-			/* 遮罩：左邊保留 15% 透明度，不要完全消失 */
-			-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.15) 0%, black 60%);
-			mask-image: linear-gradient(to right, rgba(0,0,0,0.15) 0%, black 60%);
-		}
-
-		/* --- 日光模式專用特效 (深色墨線) --- */
+		/* ====== ☀️ 日光模式 (Sunlight) - 尊爵燙金特效 ====== */
 		.monster-bg-art.theme-sunlight img {
-			opacity: 0.15; /* 淡淡的浮水印感 */
-			filter: grayscale(1) contrast(1.2); /* 轉為深灰線條 */
-			mix-blend-mode: multiply; /* 去背：只留暗部 (正片疊底) */
-			/* 遮罩：左邊保留 5% 透明度 */
-			-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.05) 0%, black 60%);
-			mask-image: linear-gradient(to right, rgba(0,0,0,0.05) 0%, black 60%);
+			opacity: 0.7; /* 燙金需要高一點的不透明度才顯色 */
+			
+			/* 濾鏡魔法：
+			   1. invert(1): 先把原本的黑線轉成白線 (背景變黑)
+			   2. sepia(1) saturate(500%): 把白線染成濃郁的深紅/橘色
+			   3. hue-rotate(190deg): 色相旋轉，轉為深藍色 (金色的互補色)
+			   4. brightness(0.7): 壓低亮度，讓混合後的金色更深沈、有質感
+			*/
+			filter: invert(1) sepia(1) saturate(500%) hue-rotate(190deg) brightness(0.7) contrast(1.5)
+					drop-shadow(1px 1px 0px rgba(255, 255, 255, 0.5)); /* 增加一點白色反光邊緣，模擬壓印感 */
+		
+			mix-blend-mode: difference; 
+			
+			-webkit-mask-image: linear-gradient(to right, transparent 5%, black 60%);
+			mask-image: linear-gradient(to right, transparent 5%, black 60%);
+		}
+
+		/* ====== 🌙 深色模式 (Midnight) - 科技發光特效 ====== */
+		.monster-bg-art.theme-midnight img {
+			opacity: 0.4;
+			/* 科技藍光設定 */
+			filter: invert(1) grayscale(1) brightness(1.5) 
+					drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
+					
+			mix-blend-mode: screen; /* 濾掉黑色背景，保留光暈 */
+			
+			-webkit-mask-image: linear-gradient(to right, transparent 5%, black 60%);
+			mask-image: linear-gradient(to right, transparent 5%, black 60%);
 		}
 
 		@keyframes float-art {
-			0% { transform: scale(1.0) translateY(0); }
-			100% { transform: scale(1.08) translateY(-5px); }
+			0% { transform: scale(1.05) translateY(0px); }
+			100% { transform: scale(1.1) translateY(-10px); }
 		}
 		
     </style>
@@ -987,11 +999,10 @@
 							
 							{/* --- [新增] 全版背景圖片區塊 --- */}
 							{viewMode === 'card' && m.cn === '水晶化身之王' && (
-								  /* 這裡加入了 isMidnight 的判斷，自動切換特效 class */
-								  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
-									<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/arch_aethereater.png" alt="Lord of the Crystallizer Art" />
-								  </div>
-								)}
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/arch_aethereater.png" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
 							{/* ----------------------------- */}
 
 							<div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
