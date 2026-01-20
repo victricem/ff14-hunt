@@ -81,24 +81,18 @@
 			object-position: center 30%;
 			display: block;
 			transition: all 0.5s ease;
-			animation: float-art 15s ease-in-out infinite alternate;
+			animation: float-art 20s ease-in-out infinite alternate;
 		}
 
-		/* ====== ☀️ 日光模式 (Sunlight) - 尊爵燙金特效 ====== */
+		/* ====== ☀️ 日光模式 (Sunlight) - 真．燙金特效 ====== */
 		.monster-bg-art.theme-sunlight img {
-			opacity: 0.7; /* 燙金需要高一點的不透明度才顯色 */
+			opacity: 0.6; /* 調整這個數值改變燙金的深淺 (0.5 ~ 0.8) */
 			
-			/* 濾鏡魔法：
-			   1. invert(1): 先把原本的黑線轉成白線 (背景變黑)
-			   2. sepia(1) saturate(500%): 把白線染成濃郁的深紅/橘色
-			   3. hue-rotate(190deg): 色相旋轉，轉為深藍色 (金色的互補色)
-			   4. brightness(0.7): 壓低亮度，讓混合後的金色更深沈、有質感
-			*/
-			filter: invert(1) sepia(1) saturate(500%) hue-rotate(190deg) brightness(0.7) contrast(1.5)
-					drop-shadow(1px 1px 0px rgba(255, 255, 255, 0.5)); /* 增加一點白色反光邊緣，模擬壓印感 */
-		
-			mix-blend-mode: difference; 
+			filter: invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
+					
+			mix-blend-mode: multiply; /* 確保白色背景透明，只留下金色線條 */
 			
+			/* 遮罩：讓文字區保持乾淨 */
 			-webkit-mask-image: linear-gradient(to right, transparent 5%, black 60%);
 			mask-image: linear-gradient(to right, transparent 5%, black 60%);
 		}
