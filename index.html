@@ -1023,6 +1023,11 @@
 								<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/arch_aethereater.png" alt="Lord of the Crystallizer Art" />
 							  </div>
 							)}
+							{viewMode === 'card' && m.cn === '厭忌之人 奇里格' && (
+							  <div className={`monster-bg-art ${isMidnight ? 'theme-midnight' : 'theme-sunlight'}`}>
+								<img src="https://raw.githubusercontent.com/victricem/ff14-hunt/main/image/Kirlirger_the_Abhorren.png" alt="Lord of the Crystallizer Art" />
+							  </div>
+							)}
 							{/* ----------------------------- */}
 
 							<div onClick={() => viewMode === 'list' && setShowTriggers(prev => ({...prev, [m.id]: !prev[m.id]}))} 
