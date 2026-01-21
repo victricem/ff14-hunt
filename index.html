@@ -102,34 +102,31 @@
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
-
+		
 		@media (max-width: 768px) {
-			
-			.monster-bg-art img {
-				width: 120% !important; 
-				transform: translateX(15%) !important; 
-				object-position: center 30% !important; 
-			}
-
-			.monster-bg-art.theme-sunlight img,
-			.monster-bg-art.theme-midnight img {
-				-webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
-				mask-image: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 45%, black 100%) !important;
-			}
-
-			.monster-bg-art.theme-sunlight img {
-				opacity: 0.6 !important; 
-			}
-			.monster-bg-art.theme-midnight img {
-				opacity: 0.5 !important;
-			}
+		    .monster-bg-art img {
+		        width: 120% !important; 
+		        transform: translateX(15%) translateZ(0) !important; 
+		        object-position: center 30% !important; 
+		    }
+		    .monster-bg-art.theme-sunlight img,
+		    .monster-bg-art.theme-midnight img {
+		        -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 2%, rgba(0,0,0,0.1) 45%, black 100%) !important;
+		        mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.1) 2%, rgba(0,0,0,0.1) 45%, black 100%) !important;
+		    }
+		    .monster-bg-art.theme-sunlight img {
+		        opacity: 0.6 !important; 
+		        filter: contrast(2) brightness(1.2) invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1) !important;
+		    }
+		    .monster-bg-art.theme-midnight img {
+		        opacity: 0.5 !important;
+		        filter: contrast(2.5) brightness(1.5) invert(1) grayscale(1) brightness(1.5) !important;
+		    }
 		}
-
 		@keyframes float-art {
 			0% { transform: scale(1.05) translateY(0px); }
 			100% { transform: scale(1.1) translateY(-10px); }
 		}
-
 		.hunt-card.s-rank {
 			background: transparent !important;
 			box-shadow: none !important;
@@ -1688,6 +1685,7 @@
     </script>
 </body>
 </html>
+
 
 
 
