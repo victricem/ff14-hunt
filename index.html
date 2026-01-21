@@ -77,7 +77,8 @@
 			object-fit: cover;
 			display: block;
 			transition: all 0.5s ease;
-			animation: float-art 20s ease-in-out infinite alternate;
+			backface-visibility: hidden;
+  			transform: translateZ(0);
 		}
 
 		.monster-bg-art img {
@@ -87,11 +88,8 @@
 
 		.monster-bg-art.theme-sunlight img {
 			opacity: 0.5;
-			
-			filter: contrast(0.5) brightness(1.2) invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
-			
+			filter: contrast(2.5) brightness(1.2) invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
 			mix-blend-mode: multiply;
-			
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
@@ -99,11 +97,8 @@
 
 		.monster-bg-art.theme-midnight img {
 			opacity: 0.3;
-			
 			filter: contrast(2.5) brightness(1.5) invert(1) grayscale(1) brightness(1.5) drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
-			
 			mix-blend-mode: screen;
-			
 			-webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 			mask-image: linear-gradient(to right, transparent 0%, transparent 20%, black 100%);
 		}
@@ -1693,5 +1688,6 @@
     </script>
 </body>
 </html>
+
 
 
