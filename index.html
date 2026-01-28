@@ -240,50 +240,81 @@
             return { label: '🔴 強制觸發 (必出)', color: 'text-red-500 font-black animate-bounce' };
         };
 
-        const getCombinedWindowText = (m, eorzeaData) => {
-            if (!m.windowType) return null;
-            const currentUnix = Date.now() / 1000;
-            const weatherBaseTime = Math.floor(currentUnix / 1400) * 1400;
-            for (let i = 0; i < 450; i++) {
-                const checkTime = weatherBaseTime + (i * 1400); 
-                const checkETTotal = checkTime * (1440/70); 
-                const checkETHours = (checkETTotal / 3600) % 24; 
-                const weatherVal = calculateWeatherValue(Math.floor(checkTime));
-                const weatherName = getWeather(m.zone, weatherVal);
-                const isW = m.weather ? (m.weather.includes(weatherName)) : true;
-                const moonPhase = (Math.floor(checkETTotal / 86400) + 1) % 32;
-                const moonDay = moonPhase === 0 ? 32 : moonPhase; 
-                const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
-                if (isW && isMoon) {
-                    for (let h = 0; h < 8; h++) {
-                        const currentETHour = (checkETHours + h) % 24;
-                        const exactSpawnTime = checkTime + (h * 175);
-                        const exactSpawnEndTime = exactSpawnTime + 175;
-                        if (m.cn === '巨大鰩' && moonDay === 16 && currentETHour < 12) continue; 
-                        let isTimeValid = true;
-                        if (m.time) {
-                            const [start, end] = m.time;
-                            isTimeValid = (start < end) ? (currentETHour >= start && currentETHour < end) : (currentETHour >= start || currentETHour < end);
-                        }
-                        if (isTimeValid) {
-                            if (currentUnix >= exactSpawnTime && currentUnix < exactSpawnEndTime) {
-                                const secondsLeft = (Math.min(checkTime + 1400, exactSpawnTime + 175)) - currentUnix;
-                                if (secondsLeft <= 0) return "窗口即將結束";
-                                return `開放剩餘：${Math.floor(secondsLeft / 3600)}h ${Math.floor((secondsLeft % 3600) / 60).toString().padStart(2,'0')}m`;
-                            }
-                            if (exactSpawnTime > currentUnix) {
-                                const waitSeconds = exactSpawnTime - currentUnix;
-                                const days = Math.floor(waitSeconds / 86400);
-                                const h = Math.floor((waitSeconds % 86400) / 3600);
-                                const mm = Math.floor((waitSeconds % 3600) / 60).toString().padStart(2,'0');
-                                return days > 0 ? `理論：約 ${days}天 ${h}h ${mm}m` : `理論：約 ${h}h ${mm}m`;
-                            }
-                        }
-                    }
-                }
-            }
-            return "一週內無符合條件";
-        };
+		const getCombinedWindowText = (m, eorzeaData) => {
+			if (!m.windowType) return null;
+			const currentUnix = Date.now() / 1000;
+			// 每個天氣時段長度為 1400 秒 (23分20秒)
+			const weatherBaseTime = Math.floor(currentUnix / 1400) * 1400;
+
+			for (let i = 0; i < 450; i++) { // 預測未來範圍
+				const checkTime = weatherBaseTime + (i * 1400); 
+				const checkETTotal = checkTime * (1440/70); 
+				const checkETHours = (checkETTotal / 3600) % 24; 
+				
+				// 1. 計算「當前」檢查點的天氣
+				const weatherVal = calculateWeatherValue(Math.floor(checkTime));
+				const weatherName = getWeather(m.zone, weatherVal);
+				
+				let isW = true;
+
+				// ================= 修改開始 =================
+				// 針對雷德羅巨蛇的特殊邏輯
+				if (m.windowType === 'continuous-rain') {
+					// 計算「前一個」時段 (checkTime - 1400) 的天氣
+					const prevWeatherVal = calculateWeatherValue(Math.floor(checkTime - 1400));
+					const prevWeatherName = getWeather(m.zone, prevWeatherVal);
+					
+					// 只有當「現在是雨」且「上一場也是雨」才符合
+					if (weatherName === '雨' && prevWeatherName === '雨') {
+						isW = true;
+					} else {
+						isW = false;
+					}
+				} else {
+					// 原有的普通天氣判斷邏輯
+					isW = m.weather ? (m.weather.includes(weatherName)) : true;
+				}
+				// ================= 修改結束 =================
+
+				const moonPhase = (Math.floor(checkETTotal / 86400) + 1) % 32;
+				const moonDay = moonPhase === 0 ? 32 : moonPhase; 
+				const isMoon = m.moon ? (moonDay >= m.moon[0] && moonDay <= m.moon[1]) : true;
+
+				if (isW && isMoon) {
+					// ... (原本的時間判斷代碼保持不變) ...
+					// 為了節省篇幅，這裡省略原本的 return 邏輯，請保留你原本的代碼
+					// ...
+					 for (let h = 0; h < 8; h++) {
+						const currentETHour = (checkETHours + h) % 24;
+						const exactSpawnTime = checkTime + (h * 175);
+						const exactSpawnEndTime = exactSpawnTime + 175;
+						if (m.cn === '巨大鰩' && moonDay === 16 && currentETHour < 12) continue; 
+						let isTimeValid = true;
+						if (m.time) {
+							const [start, end] = m.time;
+							isTimeValid = (start < end) ? (currentETHour >= start && currentETHour < end) : (currentETHour >= start || currentETHour < end);
+						}
+						if (isTimeValid) {
+							if (currentUnix >= exactSpawnTime && currentUnix < exactSpawnEndTime) {
+								const secondsLeft = (Math.min(checkTime + 1400, exactSpawnTime + 175)) - currentUnix;
+								if (secondsLeft <= 0) return "窗口即將結束";
+								// 這裡可以針對連續雨做一個特別提示，如果是連續雨觸發，顯示「連續降雨中」會更直觀
+								if (m.windowType === 'continuous-rain') return `觸發開放：連續降雨中`;
+								return `開放剩餘：${Math.floor(secondsLeft / 3600)}h ${Math.floor((secondsLeft % 3600) / 60).toString().padStart(2,'0')}m`;
+							}
+							if (exactSpawnTime > currentUnix) {
+								const waitSeconds = exactSpawnTime - currentUnix;
+								const days = Math.floor(waitSeconds / 86400);
+								const h = Math.floor((waitSeconds % 86400) / 3600);
+								const mm = Math.floor((waitSeconds % 3600) / 60).toString().padStart(2,'0');
+								return days > 0 ? `理論：約 ${days}天 ${h}h ${mm}m` : `理論：約 ${h}h ${mm}m`;
+							}
+						}
+					}
+				}
+			}
+			return "一週內無符合條件";
+		};
 
         async function sha256(message) {
           try {
@@ -391,7 +422,7 @@
           },
           arr: {
             s: [
-              { cn: '雷德羅巨蛇', jp: 'レドロネット', zone: '黑衣森林中央林區', window: 50, trigger: '黑衣森林中央林區連續 30 分鐘（現實時間）下雨。', windowType: 'weather-special', weather: '雨/雷雨' },
+              { cn: '雷德羅巨蛇', jp: 'レドロネット', zone: '黑衣森林中央林區', window: 50, trigger: '黑衣森林中央林區連續 2 個 ET 時段（約 47 分鐘）天氣皆為「雨」。', windowType: 'continuous-rain', weather: '雨' },
               { cn: '烏爾伽魯', jp: 'ウルガル', zone: '黑衣森林東部林區', window: 50, trigger: '開始「傭兵理符/軍隊理符」時概率觸發。' },
               { cn: '奪心魔', jp: 'マインドフレア', zone: '黑衣森林南部林區', window: 50, trigger: 'ET 新月（1-4日）17:00-03:00 時玩家經過刷新點。（首日從 0:00 開始）', windowType: 'moon-time', moon: [1,4], time: [17,3] },
               { cn: '千竿口花希達', jp: 'サウザンドキャスト・セダ', zone: '黑衣森林北部林區', window: 50, trigger: '在秋瓜湖畔釣場黑衣森林北部林區 (X: 21, Y: 26.2)釣上釣場之王審判鳐概率觸發（魚餌：雉雞擬餌）。' },
@@ -1674,7 +1705,6 @@
     </script>
 </body>
 </html>
-
 
 
 
