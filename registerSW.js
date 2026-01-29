@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/ff14-hunt/sw.js', { scope: '/ff14-hunt/' })})}
