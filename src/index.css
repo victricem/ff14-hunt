@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 移植舊版 body 樣式 */
+body {
+  font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+  background-color: #0f172a;
+  /* 確保手機版滑動體驗 */
+  overscroll-behavior-y: none; 
+}
+
+/* 移植舊版 Scrollbar 隱藏與自定義樣式 */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+/* 移植舊版遮罩效果 */
+.scroll-gradient-mask {
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+/* 移植舊版怪物背景圖核心 CSS (這是視覺還原的關鍵) */
+.monster-bg-art {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 10%, black 50%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, transparent 10%, black 50%, black 100%);
+}
+
+.monster-bg-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: all 0.5s ease;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  object-position: center 30%; 
+}
+
+/* 日間模式濾鏡 */
+.monster-bg-art.theme-sunlight img {
+  opacity: 0.5;
+  filter: contrast(2) brightness(1.2) invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1);
+  mix-blend-mode: multiply;
+}
+
+/* 夜間模式濾鏡 */
+.monster-bg-art.theme-midnight img {
+  opacity: 0.3;
+  filter: contrast(3) brightness(1.5) invert(1) grayscale(1) brightness(1.5) drop-shadow(0 0 5px rgba(100, 200, 255, 0.8));
+  mix-blend-mode: screen;
+}
+
+/* RWD 針對手機版的特殊調整 */
+@media (max-width: 768px) {
+  .monster-bg-art img {
+      width: 120% !important; 
+      transform: translateX(15%) translateZ(0) !important; 
+      object-position: center 30% !important; 
+  }
+
+  .monster-bg-art {
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 15%, rgba(0,0,0,0.2) 50%, black 100%) !important;
+      mask-image: linear-gradient(to right, transparent 0%, transparent 15%, rgba(0,0,0,0.2) 50%, black 100%) !important;
+  }
+  .monster-bg-art.theme-sunlight img {
+      opacity: 0.6 !important; 
+      filter: contrast(2) brightness(1.2) invert(1) sepia(1) saturate(300%) hue-rotate(190deg) brightness(1.2) contrast(1.2) invert(1) !important;
+  }
+  .monster-bg-art.theme-midnight img {
+      opacity: 0.5 !important; 
+      filter: contrast(3) brightness(1.5) invert(1) grayscale(1) brightness(1.5) !important;
+  }
+}
